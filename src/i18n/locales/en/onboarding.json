@@ -1,0 +1,140 @@
+{
+	"title": "Welcome to Edda",
+	"subtitle": "Read papers and take notes alongside your AI assistant. A few quick steps to set up your workspace.",
+	"recommended": "Recommended",
+	"steps": {
+		"welcome": "Welcome",
+		"theme": "Appearance",
+		"proxy": "Network",
+		"agent": "Edda",
+		"translate": "Translation",
+		"layout": "Figures & formulas",
+		"vault": "Get started"
+	},
+	"welcome": {},
+	"theme": {
+		"title": "Pick your look",
+		"desc": "Choose a color scheme you like — you can change it anytime in Settings.",
+		"modeSystem": "System",
+		"modeLight": "Light",
+		"modeDark": "Dark",
+		"uiThemeSelect": "Select {{name}}"
+	},
+	"proxy": {
+		"title": "Set up network access",
+		"desc": "Use a local proxy when academic sites, GitHub, or Agent downloads need one.",
+		"hint": "Leave the switch off to connect directly, or enable it for a local HTTP/SOCKS proxy.",
+		"urlLabel": "Proxy URL",
+		"enabledLabel": "Enable network proxy",
+		"probe": "Probe"
+	},
+	"agent": {
+		"title": "Choose your AI assistant",
+		"desc": "Connect an ACP-compatible Agent on this computer. Install it if needed; sign-in and model configuration are handled by the Agent itself.",
+		"rescan": "Rescan",
+		"scanning": "Scanning…",
+		"none": "No agents found yet. Install one on this computer (e.g. opencode or claude-acp), then click Rescan.",
+		"setDefault": "Set as default",
+		"install": "Install",
+		"installAgentAria": "Install {{name}} agent",
+		"installFailed": "Could not install agent",
+		"default": "Default",
+		"probe": "Probe",
+		"ready": "Ready",
+		"missing": "Not installed",
+		"failed": "Probe failed",
+		"notProbed": "Not probed",
+		"scanFailed": "Failed to scan agents"
+	},
+	"translate": {
+		"title": "Set up translation",
+		"desc": "Select text in foreign-language papers to translate it instantly. The built-in option works out of the box.",
+		"configureOwn": "I have my own translation API",
+		"configureOwnDesc": "Bring your own DeepL or other translation API key.",
+		"useDefault": "Use the built-in translator (recommended)",
+		"useDefaultDesc": "Works out of the box with no setup.",
+		"apiKeyPlaceholder": "API key",
+		"endpointPlaceholder": "Endpoint (optional)",
+		"openDocs": "Open provider website",
+		"test": "Test",
+		"probeIdle": "Not tested yet",
+		"probeProbing": "Testing…",
+		"probeOk": "Works",
+		"probeFail": "Check your key and try again"
+	},
+	"layout": {
+		"title": "Spot figures and formulas automatically",
+		"configureOwn": "Use a cloud service (recommended)",
+		"configureOwnDesc": "Bring your own Paddle, MinerU, or OpenAI-compatible API key for the best accuracy on figures and formulas.",
+		"useDefault": "Use the free on-device model",
+		"useDefaultDesc": "Runs entirely on your device with no setup and works offline, but uses system resources, is slower, and is less accurate on complex layouts.",
+		"openDocs": "Open provider website",
+		"openDocsLabel": "Get an API key",
+		"test": "Test",
+		"probeIdle": "Not tested yet",
+		"probeProbing": "Testing…",
+		"probeOk": "Works",
+		"probeFail": "Check your key and try again"
+	},
+	"vault": {
+		"title": "Create your library",
+		"desc": "A vault is just a plain folder on your computer where papers and notes live. You can create or switch to another one anytime.",
+		"create": "Create a vault",
+		"createDesc": "Choose a separate Edda folder first. After it is created, you can import from Zotero.",
+		"zotero": "Import from Zotero",
+		"zoteroOfferTitle": "Import from Zotero now?",
+		"zoteroOfferDesc": "Your Edda vault is ready. You can now choose a Zotero data folder as the import source.",
+		"zoteroNo": "Don't import from Zotero"
+	},
+	"actions": {
+		"start": "Start setup",
+		"next": "Next",
+		"back": "Back",
+		"finish": "Finish setup"
+	},
+	"tour": {
+		"sidebar": {
+			"title": "Your library & vault",
+			"desc": "The sidebar holds your paper library, vault folders and discovery sources. Everything is just Markdown and files on your computer."
+		},
+		"library": {
+			"title": "Papers library",
+			"desc": "Every paper in your vault shows up here. Sort columns, filter by tags, edit metadata and export BibTeX in one place."
+		},
+		"coolPapers": {
+			"title": "Cool Papers",
+			"desc": "Browse arXiv highlights and trending papers. One click opens an interesting paper in the workspace."
+		},
+		"magicWand": {
+			"title": "One-click import",
+			"desc": "Paste a DOI, arXiv ID or link; metadata, PDF and LaTeX source are fetched automatically. {{magicWandShortcut}} opens it anytime."
+		},
+		"readPaper": {
+			"title": "Read & take notes",
+			"desc": "Click the lightning bolt on any paper to open it with the PDF on the left and NOTES.md on the right, ready for highlights and annotations."
+		},
+		"workspace": {
+			"title": "Split-screen reading",
+			"desc": "Open any paper to split the view: PDF on the left, NOTES.md on the right. Select text to highlight, annotate, translate or ask questions."
+		},
+		"fullTextTranslate": {
+			"title": "Full-text translation",
+			"desc": "The PDF toolbar can translate the whole paper at once. Run it once, then browse the translation inline or open it side-by-side."
+		},
+		"fetchCoolPapersNotes": {
+			"title": "Cool Paper notes",
+			"desc": "While editing a paper's NOTES.md, click this button to fetch public Kimi notes from Cool Papers and merge them into your own notes."
+		},
+		"agent": {
+			"title": "Meet Edda, your research companion",
+			"desc": "Read, discuss and review with Edda. Connect a locally signed-in ACP backend, then bring a paper or question to the conversation."
+		},
+		"titlebar": {
+			"title": "Start exploring",
+			"desc": "You're all set. {{settingsShortcut}} opens Settings, {{quickOpenShortcut}} jumps anywhere. Tutorial notes were created in your vault — start there."
+		},
+		"next": "Next",
+		"back": "Back",
+		"done": "Done"
+	}
+}

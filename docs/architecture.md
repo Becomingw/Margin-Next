@@ -1,0 +1,152 @@
+# 架构总览
+
+此页保留上游 Edda 全工作台架构。独立 Margin 的实际装配见 [Margin](margin.md)，
+审阅权威数据已切换为 [事务文档后端](backend/margin.md)，不使用下文的 Vault / Catalog 启动链路。
+
+Edda 基于 Tauri 2 + React 19，本地优先，Vault 文件与 Catalog SQLite 为事实来源。
+
+**产品定位**：Edda 也是项目中科研助手的名字，是跨会话、跨运行后端的一位科研伙伴。长期目标是逐步协助从问题形成、文献阅读、研究探索到写作与审阅的科研全流程；当前集成重点为阅读、修改和审阅，不把未来规划说成已有能力。Codex、Claude 等是 Edda 可选择的 ACP 运行后端，协议名称与第三方品牌保留真实身份。
+
+## 整体架构
+
+```text
+┌─────────────────────────────────────────────────┐
+│  React 19 Webview (src/)                        │
+│  zustand vanilla stores → AI Elements UI        │
+├─────────────────────────────────────────────────┤
+│  Tauri IPC (invoke / events)                    │
+├─────────────────────────────────────────────────┤
+│  Rust Host (src-tauri/)                         │
+│  feature-first: vault/paper/pdf/markdown/system │
+├─────────────────────────────────────────────────┤
+│  Vault + Catalog SQLite + XDG 设置 / 使用记录   │
+└─────────────────────────────────────────────────┘
+```
+
+- **前端**：[`docs/frontend/index.md`](frontend/index.md) — React 19、TypeScript、Tailwind CSS 4、shadcn/ui、AI Elements。按域 zustand vanilla store（`src/lib/<域>/store.ts` + `actions.ts`）；React 经 `hooks/use-app-stores.ts` selector 订阅。
+- **Host**：[`docs/backend/index.md`](backend/index.md) — Rust、Tauri commands、文件系统、Wiki 索引、ACP Client。`app/` 装配、`core/` 基础、`features/<域>/`（`mod` + `commands` + 按需 `models`）。
+- **MCP**：应用运行时开放结构化业务工具；UI 与 MCP 复用 `edda-core` 和 Host 服务。业务 CLI 已退役，见 [迁移说明](backend/cli.md)。
+
+## 工作台布局
+
+| 区域 | 内容 | 详情 |
+|---|---|---|
+| 左侧栏 | 文件树 + Paper Info | 常驻 collapsible，`preserve-pixel-size` |
+| 中间 | Dockview 工作区 | Library / PDF / HTML / 图片 / Markdown / Trash |
+| 右侧栏 | Agent / 批注 / References（引用卡片 + 近邻图）/ Figures | 可选，同样 collapsible |
+
+- **文件树**：顶部虚拟 Library + Recycle Bin、魔棒按钮。论文默认是叶子；`{paper}/attachments/` 非空时行上出现 chevron，子项直接挂在论文下。右键新建/删除/在 Finder 中显示/终端打开。多选（⌘/Shift）+ 拖拽移动。详见 [vault-tree.md](frontend/vault-tree.md)。
+- **Dockview**：每个打开文档一个 panel，支持 tab、上下左右分屏、多格网格。布局 `toJSON()` 持久化，path/mode 在 panel params。详见 [workspace.md](frontend/workspace.md)。
+- **论文管理**：Library 为主入口，标签负责分类；`papers/<id>/` 平级保存论文文件，支持无 PDF 的题录、手动添加文献、指定条目添加/替换 PDF。旧分类目录自动迁移，见 [Library](frontend/library.md)。
+- **论文 NOTES**：默认优先阅读 PDF/HTML，笔记按需展开；启用自动打开笔记偏好时使用配对分屏。
+- **错误 Toast**：右上角 Sonner，经 `notifyError`（`src/lib/core/notify.ts`）；表单就地校验不走 Toast。
+
+## 核心工作流
+
+### 论文发现与候选池
+
+广场保留 Cool Papers、ModelScope，新增 [论文池](usage/paper-pool.md)。订阅和 arXiv Daily 已退役，相关代码与 Embedding 配置均已移除。外部 Agent 向 JSON 冷存储投递，应用读取后展示题录、作者单位、摘要与推荐理由，用户显式入库才写正式 Catalog；无需新增常驻服务。
+
+### 论文入库
+
+魔棒入库 → 下载 PDF 到 `{paper}/{id}.pdf`；arXiv 另解压 LaTeX 到 `source/`。成功后刷新树并 `openPaper`，展开并滚到新论文。详见 [paper-import.md](frontend/paper-import.md) / [backend/paper-import.md](backend/paper-import.md)。
+
+- **可读正文**：TeX 与 `PAPER.md` 有其一即可（优先 TeX）。无 TeX 时下载后 liteparse 生成 `PAPER.md`。
+- **补下载**：paper 行缺 PDF 或既无 TeX 也无 `PAPER.md` 时显示 Download（hover 说明原因）；Library 行可批量补下。
+- **Rescan**：`paper_rescan` 从 `papers/` 目录（以 `NOTES.md` 为标记）补齐盘上有、catalog 无的条目。
+- **Zotero Connector**：Host 在 `127.0.0.1:23119` 收浏览器扩展 `saveItems` + `saveAttachment`。详见 [backend/connector.md](backend/connector.md)。
+- **工作区工具 / MCP**：支持 HTTP MCP 的本机 ACP Agent 自动获得私有、固定 Vault 的工作区工具；原生文件工具或有界源文件工具读取正文，任务操作进入 JobCenter。外部客户端可通过设置启用 `127.0.0.1:8765/mcp`。这些入口复用同一业务内核。详见 [backend/mcp.md](backend/mcp.md)。
+
+### 论文库
+
+`paper_list` 读 catalog 一次进内存。表头排序/右键选列/拖拽排序/拖动调列宽（持久化到 `settings.json` 的 `libraryColumns`，标题列不可隐藏）。tags 列展示，搜索框可匹配标签子串；标题列左侧显示阅读进度热力条。文件夹作用域仅对 `papers/` 下目录按 `paper.path` 前缀过滤（不扫盘）；`notes/` / `.agents/` 等非 papers 目录显示全库。可从访达把 PDF 拖到 Library 表入库（仅 PDF overlay）。详见 [frontend/library.md](frontend/library.md) / [backend/catalog.md](backend/catalog.md)。
+
+### 标签
+
+Apple 风格 8 色 → Host `paper_set_tags`（catalog `tags_json` 权威）。Library 染色 chip 与筛选；MCP 提供用户标签查询、设置、添加和移除。
+
+### 精读（paper-reader）
+
+设置 → Agent `autoPaperReader`（默认关）。开启后魔棒入库/单篇 Download 资源就绪且未读时自动运行。资源齐全且 `is_read === false` 时文件树 Zap 可手动。写入 `NOTES.md`，成功后 `is_read = true`。进度在左下角后台任务条。应用选中的 Skill 正文直接提供，原生 `/command` 走独立直通路径。详见 [frontend/agent.md](frontend/agent.md)。
+
+### Agent 面板
+
+BYOA，连接本机 ACP Agent。详见 [frontend/agent.md](frontend/agent.md) / [backend/agent.md](backend/agent.md)。
+
+- **空态**：新对话显示所属论文 / 页面、Agent 名称及轻量吉祥物；装饰动画在隐藏或减少动态效果时暂停，提交 / 运行 / 历史恢复后让位于内容。不显示预设提问，用户直接输入。
+- **上下文**：当前论文默认加入（实心 chip，可 X 移除）。`@` 提及与文件树拖入为可移除 context chip。
+- **引用式问答**：划词不自动发送；菜单「问 Agent」/ `⌘K` / `⌘L` / `⇧⌘A` 带入来源引用并打开完整侧栏 Agent。页码与跨页矩形作为消息附件保留，普通问答不自动创建 marks；默认 `paper-qa` 按需读取预解析正文。每篇论文恢复自己的最近会话与草稿，也可新建，见 [agent-references.md](frontend/agent-references.md)。
+- **运行中继续输入**：后续消息进 Queue waitlist，当前回复结束后自动发送。
+- **权限**：全局模式 `restricted`（默认）/ `ask` / `auto`。`ask` 时弹权限对话框。
+- **结构化提问**：各 harness 的 ask-user / elicitation / Grok ext 归一为底部问卷（与 free-text composer 互斥）。详见 [frontend/agent.md](frontend/agent.md) / [backend/agent.md](backend/agent.md)。
+- **个人偏好**：`agentPersonalPrompt` 非空时经 Host `build_prompt` 注入 envelope。
+
+### PDF 阅读
+
+Vault 任意路径 `.pdf` → `blob:` 预览。右下角页码跳转/Ctrl/⌘+滚轮、触控板捏合或按住右键上下拖动缩放/大纲/⌘F 查找。真实 scale 渲染 + 平滑划词覆盖层。划词菜单：高亮/提问/翻译；批注走页右缘竖向入口。支持视觉区域批注（框选插图/表/算法/公式，可写备注或向 Agent 提问）、版面分析（Figures 侧栏列出检测到的图/表/算法/公式）、有编号公式 hover 符号解析卡。详见 [frontend/pdf.md](frontend/pdf.md) / [frontend/pdf-layout-analysis.md](frontend/pdf-layout-analysis.md)。
+
+### Markdown 编辑
+
+Plate + `@platejs/markdown`。普通文本粘贴默认按 Markdown 解析。`\$a\$` 保持普通文本、`$a$` 保持公式。Obsidian Callout（`> [!type]`）结构化渲染并原样写回。内嵌图片粘贴到 `{mdDir}/assets/`，删节点且无引用时 GC。详见 [frontend/markdown.md](frontend/markdown.md)。
+
+### 双链与图谱
+
+嵌套标题双链：`[[文件#外层标题#内层标题]]`。Wiki 索引 `.md` 变更防抖重建（~900ms）。反链见编辑器状态栏；文献引用解析入库后自动生成 `{paper}/source/edda-cite.json`，与 Markdown 双链索引分层、不共用边语义。详见 [frontend/wiki.md](frontend/wiki.md) / [backend/wiki.md](backend/wiki.md) / [backend/citation-parsing.md](backend/citation-parsing.md)。
+
+## 数据流
+
+| 层 | 内容 | 位置 |
+|---|---|---|
+| 文件 | NOTES、PDF、TeX、Markdown、assets、attachments | Vault 内 |
+| Catalog | 论文集合 + metadata | `.edda/catalog.sqlite` |
+| 阅读标注 | 高亮、划词问答、翻译、视觉批注 | `{paper}/marks/` |
+| 版面分析 | 原始 layout regions / 侧栏索引 | `{paper}/source/layout.json` / `layout-index.json` |
+| 引用解析 | 参考文献元数据 | `{paper}/source/edda-cite.json` |
+| 设置 | UI/Agent 偏好 | XDG `~/.config/edda/settings.json` |
+| 使用记录 | 打开 / 下载 / Agent 等 | XDG `~/.local/share/edda/usage.sqlite` |
+| 索引 | 双链图（编辑器/反链） | 内存，可重建 |
+| 引用图 | 文献 cites（sidecar + localMatch） | 按需扫描 sidecar，可重建 |
+
+## 跨领域关注点
+
+### 生命周期
+
+三层：
+
+- **启动**：`src/main.tsx` `boot()` 串行完成设置加载、主题/字体、i18n、store 种子，再按窗口种类 `createRoot`；Rust 侧 `app/mod.rs` 的顺序同样有约束（单实例插件必须最先装，settings 要在 builder 之前读出）。
+- **语义事件**：Rust 在关键节点 emit（`paper:imported`、`paper:assets-ready`、job 终态、`window:closed`），经 `src/lib/lifecycle/tauri-bridge.ts` 转发进前端 typed bus；handler 集中注册在 `lifecycle/register.ts`。
+- **作用域释放**：`vault:opened` 是 scoped 事件，handler 返回 teardown，"打开时做什么"和"切走时撤销什么"写在同一闭包里 —— 各 store 的 vault 级 clear 与 app 层 `vault_release`（取消该 vault 的后台 jobs、清 paper caps cache、驱逐 Host catalog 连接）都挂在这里。退出时 run closure 关闭 connector、sync 与 Bridge relay。
+
+细节与取舍（为何不需要 `vault:closed`、为何 `app:will-quit` 延后）见 [development/lifecycle-events.md](development/lifecycle-events.md)。
+
+### 国际化
+
+所有面向用户文案经 `t()` 走 `react-i18next`。en 源语言 → 同步 `zh-CN`（`src/i18n/locales/`）。详见 [frontend/settings.md](frontend/settings.md#i18n)。
+
+### 外部改动自动重载
+
+Host `notify` → `vault:file-changed`。打开的 `.md`/`NOTES.md` 磁盘变化：无未存改动则重载；有未存改动则 toast 提示；内容相等抑制自写回声。create/remove/rename 去抖刷新文件树。窗口隐藏/失焦时先缓冲变更，回到前台再 flush；后台去抖窗口更长。
+
+### 保存冲突
+
+写盘前比对上次落盘内容；磁盘已被外部改则中止写入并警告（`diskConflict.saveBlocked`）。
+
+### 多窗口
+
+`⌘N` → Host `window_new`。Vault 按窗口 session 隔离，最近列表在 localStorage。设置窗口独立原生单例。
+
+### 配色主题
+
+设置 → Appearance `uiTheme`（默认 `default`）。36 个 tweakcn 预设打包于 `src/themes/tweakcn.json`，`src/lib/ui/theme.ts` 运行时注入 CSS 变量。详见 [frontend/settings.md](frontend/settings.md)。
+
+### 日志
+
+Host `tauri-plugin-log` + 前端 `logger`。详见 [backend/logging.md](backend/logging.md)。
+
+### 命令面板
+
+`⌘P` 快速打开（论文 + `vault_search` 全文）；`⇧⌘P`/`>` 执行内置命令。`⌘K` / 有选区时 `⌘L` 将原文引用带入完整 Agent 对话。
+
+### 翻译服务
+
+可插拔 `TranslateService`（内置 provider + 免费 MT + 商用 BYOK + BYOA Agent）。内置 provider（id `builtin`）的凭证在构建期编入 Host，走 Hunyuan-MT，详见 [backend/builtin-provider.md](backend/builtin-provider.md)。其余见 [frontend/translate.md](frontend/translate.md) / [backend/translate.md](backend/translate.md)。

@@ -1,0 +1,273 @@
+/**
+ * paper-reader workflow: run the paper-reader skill against a paper folder,
+ * surface progress via background tasks, mark catalog `is_read` on success.
+ *
+ * The Host supplies the selected skill body once. This module requests the
+ * deliverable without adding native activation commands or setup rituals.
+ */
+
+import i18n from "@/i18n";
+import {
+	type AgentFailedEvent,
+	type AgentPlanEntry,
+	type AgentPlanEvent,
+	type AgentResultPayload,
+	type AgentToolEvent,
+	listenAgentCompleted,
+	listenAgentFailed,
+	listenAgentPlan,
+	listenAgentTool,
+	type RunOnceAccepted,
+	runOnce,
+} from "@/lib/agent";
+import { updateBackgroundTask } from "@/lib/core/background-tasks";
+import { commands } from "@/lib/core/bindings";
+import { errorText } from "@/lib/core/error";
+import { runLocalActivity } from "@/lib/core/tasks";
+import { isTauri } from "@/lib/core/tauri";
+import { setPaperIsRead } from "@/lib/paper/api";
+import { loadPaperMetadata } from "@/lib/paper/load-meta";
+import { paperTaskLabel } from "@/lib/paper/task-label";
+import { loadSettings } from "@/lib/settings";
+import { joinVaultPath } from "@/lib/vault";
+
+const PAPER_READER_SKILL_ID = "paper-reader";
+
+/** Prevent concurrent reads of the same paper (auto + Zap). */
+const inflightReads = new Set<string>();
+
+/**
+ * Language line for paper-reader NOTES.md body, based on the resolved App
+ * locale (`i18n.language` after settings load: `en` | `zh-CN`).
+ * Fixed skill section headings stay English; only the body language changes.
+ */
+export function paperReaderLanguageInstruction(
+	language: string = i18n.language,
+): string {
+	const lang = (language || "en").toLowerCase();
+	if (lang.startsWith("zh")) {
+		return "Write the NOTES.md body in Chinese (Simplified). Keep the fixed English section headings from the skill (e.g. ## Method).";
+	}
+	return "Write the NOTES.md body in English.";
+}
+
+/**
+ * User-facing request body: request facts only.
+ *
+ * Instructions are loaded Host-side; Composer skill selection is not a native command.
+ */
+export function buildPaperReaderUserPrompt(
+	paperRel: string,
+	language: string = i18n.language,
+): string {
+	return [
+		`Paper folder (Vault-relative): \`${paperRel}\`.`,
+		"Prefer TeX under source/, else PAPER.md, else local PDF.",
+		`Write structured lecture notes into \`${paperRel}/NOTES.md\`.`,
+		paperReaderLanguageInstruction(language),
+		"Follow the skill's Markdown layout and preserve user-authored content. Keep valid [[wikilinks]] and cite verified local PDF sources inline; do not append a Sources section or file inventory.",
+	].join("\n");
+}
+
+function planDetail(entries: AgentPlanEntry[]): string {
+	if (!entries.length) {
+		return i18n.t("app:tasks.paperReadRunning");
+	}
+	const active = entries.find(
+		(e) => e.status === "in_progress" || e.status === "pending",
+	);
+	return (
+		active?.content?.trim() ||
+		entries[entries.length - 1]?.content?.trim() ||
+		i18n.t("app:tasks.paperReadRunning")
+	);
+}
+
+/**
+ * Wait for agent:completed / agent:failed for a sessionId.
+ * Also forwards plan/tool progress into the background task.
+ */
+async function waitForAgentSession(
+	sessionId: string,
+	taskId: string,
+): Promise<AgentResultPayload> {
+	return new Promise((resolve, reject) => {
+		let settled = false;
+		const unsubs: Array<() => void> = [];
+
+		const cleanup = () => {
+			for (const u of unsubs) {
+				try {
+					u();
+				} catch {
+					// ignore
+				}
+			}
+		};
+
+		const finishOk = (payload: AgentResultPayload) => {
+			if (settled) return;
+			settled = true;
+			cleanup();
+			resolve(payload);
+		};
+
+		const finishErr = (error: string) => {
+			if (settled) return;
+			settled = true;
+			cleanup();
+			reject(new Error(error));
+		};
+
+		void (async () => {
+			try {
+				unsubs.push(
+					await listenAgentCompleted((ev: AgentResultPayload) => {
+						if (ev.sessionId !== sessionId) return;
+						finishOk(ev);
+					}),
+				);
+				unsubs.push(
+					await listenAgentFailed((ev: AgentFailedEvent) => {
+						if (ev.sessionId !== sessionId) return;
+						finishErr(ev.error || i18n.t("app:tasks.paperReadFailed"));
+					}),
+				);
+				unsubs.push(
+					await listenAgentPlan((ev: AgentPlanEvent) => {
+						if (ev.sessionId !== sessionId) return;
+						updateBackgroundTask(taskId, {
+							detail: planDetail(ev.entries ?? []),
+						});
+					}),
+				);
+				unsubs.push(
+					await listenAgentTool((ev: AgentToolEvent) => {
+						if (ev.sessionId !== sessionId) return;
+						const title = ev.title?.trim();
+						if (title) {
+							updateBackgroundTask(taskId, {
+								detail: title,
+							});
+						}
+					}),
+				);
+			} catch (e) {
+				finishErr(errorText(e));
+			}
+		})();
+	});
+}
+
+/**
+ * Start paper-reader for a Vault-relative paper path.
+ * Reports progress in the bottom-left background task floater.
+ */
+export async function runPaperReaderWorkflow(opts: {
+	vaultRoot: string;
+	/** Vault-relative paper folder, e.g. papers/1706.03762 */
+	paperPath: string;
+}): Promise<void> {
+	if (!isTauri()) {
+		throw new Error(i18n.t("sidebar:fileTree.readDesktopOnly"));
+	}
+	const paperRel = opts.paperPath.replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+	if (!paperRel) {
+		throw new Error(i18n.t("sidebar:fileTree.readFailed"));
+	}
+	if (inflightReads.has(paperRel)) {
+		return;
+	}
+	inflightReads.add(paperRel);
+
+	try {
+		await runLocalActivity(
+			{
+				kind: "paperRead",
+				title: i18n.t("app:tasks.paperRead"),
+				detail: paperTaskLabel(paperRel),
+			},
+			async ({ id, signal, setDetail }) => {
+				setDetail(i18n.t("app:tasks.paperReadStarting"));
+
+				const userPrompt = buildPaperReaderUserPrompt(paperRel);
+
+				const accepted: RunOnceAccepted = await runOnce({
+					vaultPath: opts.vaultRoot,
+					workflow: "paper_reader",
+					target: paperRel,
+					prompt: userPrompt,
+					skillIds: [PAPER_READER_SKILL_ID],
+					permissionMode: "auto",
+					// Background workflow — never surface in Agent chat history.
+					hideFromChatHistory: true,
+				});
+				const cancelAgent = () => {
+					void commands.agentCancelRun(accepted.sessionId);
+				};
+				if (signal.aborted) {
+					cancelAgent();
+					throw new Error(i18n.t("app:tasks.cancelled"));
+				}
+				signal.addEventListener("abort", cancelAgent, { once: true });
+
+				setDetail(i18n.t("app:tasks.paperReadRunning"));
+				await waitForAgentSession(accepted.sessionId, id);
+
+				setDetail(i18n.t("app:tasks.paperReadMarking"));
+				await setPaperIsRead(opts.vaultRoot, paperRel, true);
+				setDetail(i18n.t("app:tasks.paperReadDone"));
+			},
+		);
+	} finally {
+		inflightReads.delete(paperRel);
+	}
+}
+
+/**
+ * Whether local assets are enough to start paper-reader
+ * (TeX, PAPER.md, or PDF — matching skill read order).
+ */
+export function paperAssetsReadyForReader(flags: {
+	pdf?: boolean | null;
+	tex?: boolean | null;
+	paperMd?: boolean | null;
+}): boolean {
+	return Boolean(flags.tex || flags.paperMd || flags.pdf);
+}
+
+/**
+ * After import / download: if Settings → Agent → auto paper-reader is on,
+ * assets are ready, and catalog `is_read` is false, start paper-reader
+ * (shows left-bottom progress). Returns true when a run started.
+ *
+ * Default setting is **off**. Does not throw on skip; rethrows agent/workflow
+ * failures so callers can surface errors. Manual Zap always uses
+ * {@link runPaperReaderWorkflow} directly.
+ */
+export async function maybeAutoRunPaperReader(opts: {
+	vaultRoot: string;
+	/** Vault-relative paper folder */
+	paperPath: string;
+	/** Caller-known asset flags after ingest */
+	assetsReady: boolean;
+}): Promise<boolean> {
+	if (!opts.assetsReady || !isTauri()) return false;
+	if (!loadSettings().autoPaperReader) return false;
+	const paperRel = opts.paperPath.replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+	if (!paperRel || inflightReads.has(paperRel)) return false;
+
+	const abs = joinVaultPath(opts.vaultRoot, paperRel);
+	try {
+		const meta = await loadPaperMetadata(abs, opts.vaultRoot);
+		if (meta?.is_read === true) return false;
+	} catch {
+		// No catalog row / unreadable — still try (workflow may work; mark may fail)
+	}
+
+	await runPaperReaderWorkflow({
+		vaultRoot: opts.vaultRoot,
+		paperPath: paperRel,
+	});
+	return true;
+}

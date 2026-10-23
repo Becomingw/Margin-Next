@@ -1,0 +1,205 @@
+/* Shared visual materials (docs/design.md). Theme presets own semantic colors;
+ * depth comes from hairlines, and shadows belong to floating layers only. */
+:root,
+.dark {
+	/* Dividers inside a surface; `--border` outlines surfaces, `--input` controls. */
+	--hairline-soft: color-mix(in oklch, var(--border) 60%, transparent);
+	--surface-chrome: color-mix(in oklch, var(--sidebar) 72%, var(--background));
+	--surface-shadow-floating:
+		0 2px 6px oklch(0 0 0 / 0.06), 0 14px 40px oklch(0 0 0 / 0.13);
+	--surface-shadow-dialog:
+		0 4px 12px oklch(0 0 0 / 0.08), 0 28px 80px oklch(0 0 0 / 0.2);
+}
+
+.dark {
+	--surface-shadow-floating:
+		0 2px 8px oklch(0 0 0 / 0.2), 0 16px 44px oklch(0 0 0 / 0.34);
+	--surface-shadow-dialog:
+		0 4px 16px oklch(0 0 0 / 0.25), 0 28px 88px oklch(0 0 0 / 0.42);
+}
+
+[data-titlebar] {
+	background-color: var(--surface-chrome);
+	border-bottom-color: var(--hairline-soft);
+}
+
+[data-titlebar] [aria-pressed="true"] {
+	background-color: var(--sidebar-accent);
+	color: var(--sidebar-accent-foreground);
+	box-shadow: inset 0 0 0 1px var(--hairline-soft);
+}
+
+[data-pane-header] {
+	border-bottom-color: var(--hairline-soft);
+	background-color: color-mix(in oklch, var(--sidebar) 35%, var(--background));
+}
+
+@layer components {
+	.workbench-toolbar {
+		border-color: var(--hairline-soft);
+		background-color: color-mix(in oklch, var(--card) 75%, var(--background));
+	}
+
+	.workbench-card {
+		border-color: var(--border);
+		background-color: var(--card);
+	}
+}
+
+.paper-responsive-table tbody > tr[data-index] {
+	border-bottom-color: var(--hairline-soft);
+}
+
+.edda-dockview .dv-tab {
+	border-radius: 0.375rem 0.375rem 0 0;
+}
+
+.edda-dockview .dv-tab.dv-active-tab {
+	box-shadow: inset 0 1px 0 var(--hairline-soft);
+}
+
+.edda-dockview .dv-groupview.dv-active-group > .dv-tabs-and-actions-container {
+	box-shadow: inset 0 -1px 0 color-mix(in oklch, var(--ring) 22%, transparent);
+}
+
+.edda-dockview .dv-tab .dv-default-tab .dv-default-tab-action {
+	border-radius: 0.3125rem;
+	transition:
+		background-color var(--motion-duration-micro),
+		color var(--motion-duration-micro);
+}
+
+.edda-dockview .dv-tab:focus-within .dv-default-tab-action {
+	opacity: 1;
+	visibility: visible;
+}
+
+.edda-dockview .dv-default-tab-action:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: -2px;
+}
+
+.edda-dockview .dv-context-menu {
+	border: 1px solid var(--hairline-soft);
+	border-radius: var(--radius);
+	box-shadow: var(--surface-shadow-floating);
+}
+
+.edda-dockview .dv-context-menu-item {
+	border-radius: calc(var(--radius) * 0.6);
+	min-height: 1.875rem;
+	padding: 0.375rem 0.5rem;
+	font-size: 0.8125rem;
+	line-height: 1.3846;
+}
+
+[data-slot="resizable-handle"] {
+	background-color: var(--hairline-soft);
+}
+
+[data-slot="resizable-handle"]:is(:hover, :focus-visible),
+[data-slot="resizable-handle"][data-separator="active"] {
+	background-color: var(--ring);
+}
+
+[data-slot="resizable-handle"]:focus-visible {
+	outline: 1px solid var(--ring);
+	outline-offset: 1px;
+}
+
+/* Keyboard scrolling should reveal the same quiet affordance as mouse hover. */
+.edda-scroll:focus-within,
+.edda-scroll-both:focus-within {
+	scrollbar-color: color-mix(in oklch, var(--muted-foreground) 32%, transparent)
+		transparent;
+}
+
+.edda-scroll:focus-within::-webkit-scrollbar-thumb,
+.edda-scroll-both:focus-within::-webkit-scrollbar-thumb {
+	background-color: color-mix(
+		in oklch,
+		var(--muted-foreground) 28%,
+		transparent
+	);
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+	[data-titlebar],
+	[data-pane-header] {
+		background-color: var(--sidebar);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+	[data-slot="dialog-overlay"],
+	[data-slot="alert-dialog-overlay"] {
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+}
+
+@media (prefers-contrast: more) {
+	:root,
+	.dark {
+		--hairline-soft: color-mix(
+			in oklch,
+			var(--foreground) 45%,
+			var(--background)
+		);
+	}
+}
+
+@media (forced-colors: active) {
+	[data-slot="button"]:focus-visible,
+	[data-slot="input"]:focus-visible,
+	[data-slot="textarea"]:focus-visible,
+	.edda-dockview .dv-default-tab-action:focus-visible {
+		outline: 2px solid Highlight;
+	}
+}
+
+/* Settings is also hosted in a modal fallback. Give controls room without
+ * changing section navigation, row order or the native window's size policy. */
+@media (max-width: 40rem) {
+	[data-settings-sidebar] {
+		width: 9rem;
+	}
+	[data-settings-body] {
+		padding: 1rem;
+	}
+}
+
+@media (max-width: 28rem) {
+	[data-settings-sidebar] {
+		width: 4rem;
+	}
+	[data-settings-sidebar] [id^="settings-nav-"] {
+		justify-content: center;
+	}
+	[data-settings-sidebar] [id^="settings-nav-"] > span,
+	[data-settings-sidebar] > div:first-child > span {
+		display: none;
+	}
+	[data-settings-sidebar] > div:first-child {
+		justify-content: center;
+	}
+	[data-settings-sidebar] > div:last-child button {
+		font-size: 0;
+		gap: 0;
+	}
+}
+
+@container settings-content (width < 26rem) {
+	.settings-row {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.625rem;
+	}
+	.settings-row > :last-child {
+		min-width: 0;
+		flex-wrap: wrap;
+	}
+	.settings-row > :last-child > * {
+		min-width: 0;
+		max-width: 100%;
+	}
+}

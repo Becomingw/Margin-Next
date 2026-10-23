@@ -1,0 +1,78 @@
+{
+	"context": {
+		"totalCost": "Total cost",
+		"input": "Input",
+		"output": "Output",
+		"reasoning": "Reasoning",
+		"cache": "Cache",
+		"iconLabel": "Model context usage"
+	},
+	"reasoning": {
+		"thinking": "Thinking...",
+		"thought": "Thought process"
+	},
+	"sources": {
+		"used_one": "Used {{count}} source",
+		"used_other": "Used {{count}} sources"
+	},
+	"conversation": {
+		"empty": {
+			"title": "No messages yet",
+			"description": "Start a conversation to see messages here"
+		}
+	},
+	"message": {
+		"previousBranch": "Previous branch",
+		"nextBranch": "Next branch",
+		"branchIndicator": "{{current}} of {{total}}"
+	},
+	"inlineCitation": {
+		"previous": "Previous",
+		"next": "Next",
+		"unknown": "unknown"
+	},
+	"attachments": {
+		"source": "Source",
+		"image": "Image",
+		"attachment": "Attachment",
+		"remove": "Remove",
+		"empty": "No attachments"
+	},
+	"modelSelector": {
+		"label": "Model Selector",
+		"providerLogo": "{{provider}} logo"
+	},
+	"plan": {
+		"toggle": "Toggle plan",
+		"status": {
+			"pending": "Pending",
+			"in_progress": "In progress",
+			"completed": "Completed"
+		}
+	},
+	"table": {
+		"copy": "Copy table",
+		"copyAsCsv": "Copy as CSV",
+		"copyAsMarkdown": "Copy as Markdown",
+		"copyAsTsv": "Copy as TSV",
+		"download": "Download table",
+		"downloadAsCsv": "Download as CSV",
+		"downloadAsMarkdown": "Download as Markdown",
+		"viewFullscreen": "View fullscreen"
+	},
+	"code": {
+		"copy": "Copy code",
+		"download": "Download code"
+	},
+	"promptInput": {
+		"placeholder": "What would you like to know?",
+		"uploadFiles": "Upload files",
+		"stop": "Stop",
+		"submit": "Submit",
+		"error": {
+			"accept": "No files match the accepted types.",
+			"maxFileSize": "All files exceed the maximum size.",
+			"maxFiles": "Too many files. Some were not added."
+		}
+	}
+}

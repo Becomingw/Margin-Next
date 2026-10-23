@@ -1,0 +1,572 @@
+import { Compass, Wand2, X } from "lucide-react";
+import {
+	type ComponentType,
+	Fragment,
+	lazy,
+	memo,
+	type KeyboardEvent as ReactKeyboardEvent,
+	Suspense,
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { useTranslation } from "react-i18next";
+import {
+	ObjectIcon,
+	type ObjectIconKind,
+} from "@/components/icons/object-icon";
+import type {
+	SettingsHostContext,
+	SettingsSection,
+} from "@/components/settings/types";
+import { Button } from "@/components/ui/button";
+import { scrollBehavior } from "@/lib/core/motion";
+import { cn } from "@/lib/core/utils";
+import {
+	broadcastOnboardingRequest,
+	broadcastTourRequest,
+} from "@/lib/onboarding/api";
+import type { AppSettings } from "@/lib/settings";
+import { patchSettings } from "@/lib/settings/react-store";
+import { closeSettingsWindow } from "@/lib/shell/settings-window";
+import {
+	getRemoteSessionMeta,
+	isRemoteVaultHandle,
+	remoteSessionIdFromHandle,
+} from "@/lib/vault/remote/remote-vault";
+
+// Panes load per section instead of riding along with the settings shell:
+// importing them statically pulled the whole surface (agent pane + model picker
+// + translate) into the first paint. The *current* section is preloaded next to
+// the shell (see `preloadSettingsPane`), so only the sections you actually visit
+// pay for a chunk — a lazy default pane would just move the stall after render.
+const PANE_LOADERS = {
+	general: () => import("@/components/settings/panes/general-pane"),
+	appearance: () => import("@/components/settings/panes/appearance-pane"),
+	agent: () => import("@/components/settings/panes/agent-pane"),
+	translate: () => import("@/components/settings/panes/translate-pane"),
+	layout: () => import("@/components/settings/panes/layout-pane"),
+	network: () => import("@/components/settings/panes/network-pane"),
+	doctor: () => import("@/components/settings/panes/doctor-pane"),
+	keyboard: () => import("@/components/settings/panes/keyboard-pane"),
+	"remote-access": () =>
+		import("@/components/settings/panes/remote-access-pane"),
+	sync: () => import("@/components/settings/panes/sync-pane"),
+	about: () => import("@/components/settings/panes/about-pane"),
+} satisfies Record<SettingsSection, () => Promise<unknown>>;
+
+type PaneModule<S extends SettingsSection> = Awaited<
+	ReturnType<(typeof PANE_LOADERS)[S]>
+>;
+
+/** Modules already evaluated, so a pane can render without suspending. */
+const loadedPanes = new Map<SettingsSection, unknown>();
+
+function loadPane<S extends SettingsSection>(
+	section: S,
+): Promise<PaneModule<S>> {
+	return (PANE_LOADERS[section]() as Promise<PaneModule<S>>).then((module) => {
+		loadedPanes.set(section, module);
+		return module;
+	});
+}
+
+/**
+ * Warm the chunk for `section` before the shell renders. Module promises are
+ * cached, so the matching pane below resolves without a second request.
+ */
+export function preloadSettingsPane(section: string): Promise<unknown> {
+	return loadPane(
+		section in PANE_LOADERS ? (section as SettingsSection) : "general",
+	);
+}
+
+/**
+ * A pane that renders straight away once its chunk is warm. `lazy()` alone
+ * suspends on first mount even for a resolved module, which flashed an empty
+ * pane on the first visit to each section.
+ *
+ * memo(): visited panes stay mounted across section switches; without it
+ * every switch re-rendered all mounted panes.
+ */
+function settingsPane<S extends SettingsSection, P extends object>(
+	section: S,
+	pick: (module: PaneModule<S>) => ComponentType<P>,
+) {
+	const Lazy = lazy(() =>
+		loadPane(section).then((module) => ({ default: pick(module) })),
+	);
+	return memo(function SettingsPane(props: P) {
+		const [Pane] = useState<ComponentType<P>>(() => {
+			const module = loadedPanes.get(section) as PaneModule<S> | undefined;
+			return module ? pick(module) : Lazy;
+		});
+		return <Pane {...props} />;
+	});
+}
+
+const GeneralPane = settingsPane("general", (m) => m.GeneralPane);
+const AppearancePane = settingsPane("appearance", (m) => m.AppearancePane);
+const AgentPane = settingsPane("agent", (m) => m.AgentPane);
+const RemoteAgentPane = settingsPane("agent", (m) => m.RemoteAgentPane);
+const TranslatePane = settingsPane("translate", (m) => m.TranslatePane);
+const LayoutPane = settingsPane("layout", (m) => m.LayoutPane);
+const NetworkPane = settingsPane("network", (m) => m.NetworkPane);
+const DoctorPane = settingsPane("doctor", (m) => m.DoctorPane);
+const KeyboardPane = settingsPane("keyboard", (m) => m.KeyboardPane);
+const RemoteAccessPane = settingsPane(
+	"remote-access",
+	(m) => m.RemoteAccessPane,
+);
+const SyncPane = settingsPane("sync", (m) => m.SyncPane);
+const AboutPane = settingsPane("about", (m) => m.AboutPane);
+
+const NAV: {
+	id: SettingsSection;
+	icon: ObjectIconKind;
+	dividerBefore?: boolean;
+}[] = [
+	{ id: "general", icon: "settingsGeneral" },
+	{ id: "appearance", icon: "settingsAppearance" },
+	{ id: "agent", icon: "settingsAgent", dividerBefore: true },
+	{ id: "translate", icon: "settingsTranslate" },
+	{ id: "layout", icon: "settingsLayout" },
+	{ id: "network", icon: "settingsNetwork", dividerBefore: true },
+	{ id: "remote-access", icon: "settingsRemote" },
+	{ id: "sync", icon: "settingsSync" },
+	{ id: "doctor", icon: "settingsDoctor", dividerBefore: true },
+	{ id: "keyboard", icon: "settingsKeyboard" },
+	{ id: "about", icon: "settingsAbout" },
+];
+
+/** Reserves height while a pane chunk loads so the window does not jump. */
+function PaneFallback() {
+	return <div className="h-64" aria-hidden />;
+}
+
+type SettingsContentProps = {
+	section: SettingsSection;
+	onSectionChange: (section: SettingsSection) => void;
+	settings: AppSettings;
+	onChange: (next: AppSettings) => void;
+	/** Renders a close (X) button when provided (modal mode). */
+	onClose?: () => void;
+	/** aria-labelledby id supplied by a dialog wrapper. */
+	titleId?: string;
+	/** Active vault path — remote handles switch Agent settings to the SSH host. */
+	vaultPath?: string | null;
+};
+
+/** Settings navigation + panes; used by the native settings window and the modal fallback. */
+export function SettingsContent({
+	section,
+	onSectionChange,
+	settings,
+	onChange,
+	onClose,
+	titleId,
+	vaultPath = null,
+}: SettingsContentProps) {
+	const { t } = useTranslation(["settings", "common"]);
+	const fallbackTitleId = useId();
+	const headingId = titleId ?? fallbackTitleId;
+
+	// Keep visited panes mounted (hidden when inactive) so switching sections
+	// doesn't unmount/remount them — avoids re-running their load effects
+	// (agent list, connector status, cache stats, dynamic imports) and makes
+	// section switches instant instead of re-fetching on every visit.
+	const [visitedSections, setVisitedSections] = useState<SettingsSection[]>([
+		section,
+	]);
+	useEffect(() => {
+		setVisitedSections((prev) =>
+			prev.includes(section) ? prev : [...prev, section],
+		);
+	}, [section]);
+
+	// Warm every pane chunk in the background shortly after the window opens.
+	// Only the initial section is preloaded at boot; without this, the FIRST
+	// click on any other section pays for its chunk fetch + evaluation right
+	// on the click (seconds on a busy machine / dev server) — perceived as the
+	// settings UI "freezing". Sequential + staggered so the warm-up never
+	// contends with the main window.
+	useEffect(() => {
+		let cancelled = false;
+		const sections = Object.keys(PANE_LOADERS) as SettingsSection[];
+		let i = 0;
+		let timer: ReturnType<typeof setTimeout> | null = null;
+		const warmNext = () => {
+			if (cancelled || i >= sections.length) return;
+			void loadPane(sections[i++]).finally(() => {
+				if (!cancelled) timer = setTimeout(warmNext, 120);
+			});
+		};
+		timer = setTimeout(warmNext, 300);
+		return () => {
+			cancelled = true;
+			if (timer) clearTimeout(timer);
+		};
+	}, []);
+	const contentScrollRef = useRef<HTMLDivElement>(null);
+	const navListRef = useRef<HTMLUListElement>(null);
+	const navItemRefs = useRef<
+		Partial<Record<SettingsSection, HTMLButtonElement>>
+	>({});
+	const [navIndicator, setNavIndicator] = useState<{
+		top: number;
+		height: number;
+	} | null>(null);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: section intentionally triggers a scroll-to-top on switch
+	useEffect(() => {
+		contentScrollRef.current?.scrollTo({ top: 0, behavior: scrollBehavior() });
+	}, [section]);
+
+	// Slide the sidebar highlight to the active item (motion-17).
+	const measureNavIndicator = useCallback(() => {
+		const list = navListRef.current;
+		const btn = navItemRefs.current[section];
+		if (!list || !btn) return;
+		const listRect = list.getBoundingClientRect();
+		const btnRect = btn.getBoundingClientRect();
+		const top = btnRect.top - listRect.top + list.scrollTop;
+		const height = btnRect.height;
+		setNavIndicator((previous) =>
+			previous?.top === top && previous.height === height
+				? previous
+				: { top, height },
+		);
+	}, [section]);
+
+	useEffect(() => {
+		measureNavIndicator();
+		const list = navListRef.current;
+		if (!list) return;
+		const onScroll = () => measureNavIndicator();
+		list.addEventListener("scroll", onScroll, { passive: true });
+		window.addEventListener("resize", measureNavIndicator);
+		// UI font scaling and the compact icon rail can change row geometry
+		// without a window resize. Track the actual surfaces, not just viewport events.
+		const observer =
+			typeof ResizeObserver === "undefined"
+				? null
+				: new ResizeObserver(measureNavIndicator);
+		observer?.observe(list);
+		const activeItem = navItemRefs.current[section];
+		if (activeItem) observer?.observe(activeItem);
+		// Font settings can change while the webview is backgrounded, before
+		// ResizeObserver delivers a paint-driven notification.
+		const chromeObserver =
+			typeof MutationObserver === "undefined"
+				? null
+				: new MutationObserver(measureNavIndicator);
+		chromeObserver?.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["style", "class"],
+		});
+		return () => {
+			observer?.disconnect();
+			chromeObserver?.disconnect();
+			list.removeEventListener("scroll", onScroll);
+			window.removeEventListener("resize", measureNavIndicator);
+		};
+	}, [measureNavIndicator, section]);
+
+	const hostContext = useMemo((): SettingsHostContext => {
+		if (vaultPath && isRemoteVaultHandle(vaultPath)) {
+			const sessionId = remoteSessionIdFromHandle(vaultPath);
+			const meta = getRemoteSessionMeta();
+			if (sessionId && meta && meta.sessionId === sessionId) {
+				const label =
+					meta.host.trim() ||
+					meta.displayName.split(":")[0]?.trim() ||
+					t("host.remote");
+				return {
+					kind: "remote",
+					label,
+					sessionId,
+					host: meta.host,
+					remotePath: meta.remotePath,
+				};
+			}
+			if (sessionId) {
+				return {
+					kind: "remote",
+					label: t("host.remote"),
+					sessionId,
+					host: "",
+					remotePath: "",
+				};
+			}
+		}
+		return { kind: "local" };
+	}, [vaultPath, t]);
+
+	const patch = useCallback(
+		(partial: Partial<AppSettings>) => onChange({ ...settings, ...partial }),
+		[onChange, settings],
+	);
+
+	const selectSection = useCallback(
+		(id: SettingsSection) => {
+			onSectionChange(id);
+		},
+		[onSectionChange],
+	);
+
+	const onNavItemKeyDown = useCallback(
+		(
+			event: ReactKeyboardEvent<HTMLButtonElement>,
+			current: SettingsSection,
+		) => {
+			const ids = NAV.map((item) => item.id);
+			const index = ids.indexOf(current);
+			if (index < 0) return;
+			let next = index;
+			if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+				next = Math.min(ids.length - 1, index + 1);
+			} else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+				next = Math.max(0, index - 1);
+			} else if (event.key === "Home") {
+				next = 0;
+			} else if (event.key === "End") {
+				next = ids.length - 1;
+			} else {
+				return;
+			}
+			if (next === index) return;
+			event.preventDefault();
+			const id = ids[next];
+			selectSection(id);
+			navItemRefs.current[id]?.focus();
+		},
+		[selectSection],
+	);
+
+	const renderPane = (id: SettingsSection) => {
+		switch (id) {
+			case "general":
+				return (
+					<GeneralPane
+						settings={settings}
+						patch={patch}
+						hostContext={hostContext}
+						vaultPath={vaultPath}
+					/>
+				);
+			case "appearance":
+				return (
+					<AppearancePane
+						theme={settings.theme}
+						uiTheme={settings.uiTheme}
+						locale={settings.locale}
+						uiScale={settings.uiScale}
+						editorFontSize={settings.editorFontSize}
+						interfaceFontFamily={settings.interfaceFontFamily}
+						textFontFamily={settings.textFontFamily}
+						monoFontFamily={settings.monoFontFamily}
+						editorLineHeight={settings.editorLineHeight}
+						showEditorToolbar={settings.showEditorToolbar}
+						patch={patch}
+					/>
+				);
+			case "agent":
+				return hostContext.kind === "remote" ? (
+					<RemoteAgentPane
+						settings={settings}
+						patch={patch}
+						hostContext={hostContext}
+						vaultPath={vaultPath}
+					/>
+				) : (
+					<AgentPane settings={settings} patch={patch} vaultPath={vaultPath} />
+				);
+			case "translate":
+				return (
+					<TranslatePane
+						settings={settings}
+						patch={patch}
+						onOpenAgentSettings={() => onSectionChange("agent")}
+					/>
+				);
+			case "layout":
+				return (
+					<LayoutPane
+						settings={settings}
+						patch={patch}
+						vaultPath={vaultPath}
+						hostContext={hostContext}
+					/>
+				);
+			case "network":
+				return (
+					<NetworkPane
+						settings={settings}
+						patch={patch}
+						hostContext={hostContext}
+					/>
+				);
+			case "remote-access":
+				return <RemoteAccessPane vaultPath={vaultPath} />;
+			case "sync":
+				return <SyncPane vaultPath={vaultPath} />;
+			case "doctor":
+				return <DoctorPane vaultPath={vaultPath} hostContext={hostContext} />;
+			case "keyboard":
+				return <KeyboardPane />;
+			case "about":
+				return <AboutPane />;
+		}
+	};
+	return (
+		<>
+			{/* Sidebar — macOS System Settings weight (heavier material). */}
+			<nav
+				data-settings-sidebar
+				className="flex w-[11.5rem] shrink-0 select-none flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground"
+				aria-label={t("title")}
+			>
+				{/* Modal fallback only: native window already shows the title in its title bar. */}
+				{onClose ? (
+					<div className="flex items-center justify-between gap-1 px-3 pt-3 pb-2">
+						<span id={headingId} className="font-semibold text-sm leading-none">
+							{t("title")}
+						</span>
+						<Button
+							type="button"
+							variant="ghost"
+							size="icon-xs"
+							className="shrink-0"
+							aria-label={t("common:close")}
+							onClick={onClose}
+						>
+							<X className="size-3.5" />
+						</Button>
+					</div>
+				) : null}
+				<ul
+					ref={navListRef}
+					className={cn(
+						"edda-scroll relative flex min-h-0 flex-1 flex-col gap-0.5 overscroll-y-contain px-2 pb-2",
+						!onClose && "pt-3",
+					)}
+				>
+					{navIndicator ? (
+						<span
+							aria-hidden
+							className="pointer-events-none absolute inset-x-2 top-0 z-0 rounded-md bg-sidebar-accent ring-1 ring-inset ring-hairline-soft transition-[transform,height] duration-[var(--motion-duration-fast)] ease-[var(--motion-ease-out)] motion-reduce:transition-none will-change-transform"
+							style={{
+								height: navIndicator.height,
+								transform: `translate3d(0, ${navIndicator.top}px, 0)`,
+							}}
+						/>
+					) : null}
+					{NAV.map((item) => {
+						const active = section === item.id;
+						return (
+							<Fragment key={item.id}>
+								{item.dividerBefore ? (
+									<li
+										aria-hidden
+										className="relative z-10 mx-1 my-1.5 border-t border-sidebar-border/80"
+									/>
+								) : null}
+								<li className="relative z-10">
+									<button
+										id={`settings-nav-${item.id}`}
+										ref={(el) => {
+											if (el) navItemRefs.current[item.id] = el;
+											else delete navItemRefs.current[item.id];
+										}}
+										type="button"
+										aria-current={active ? "page" : undefined}
+										aria-label={t(`nav.${item.id}`)}
+										title={t(`nav.${item.id}`)}
+										className={cn(
+											"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm outline-none",
+											"transition-[color,background-color,opacity] duration-[var(--motion-duration-micro)] ease-[var(--motion-ease-out)]",
+											"focus-visible:ring-2 focus-visible:ring-sidebar-ring/60 focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
+											"active:bg-sidebar-accent",
+											active
+												? "font-semibold text-sidebar-accent-foreground"
+												: "text-sidebar-foreground/90 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground",
+										)}
+										onClick={() => selectSection(item.id)}
+										onKeyDown={(event) => onNavItemKeyDown(event, item.id)}
+									>
+										<ObjectIcon kind={item.icon} className="size-4 shrink-0" />
+										<span className="truncate">{t(`nav.${item.id}`)}</span>
+									</button>
+								</li>
+							</Fragment>
+						);
+					})}
+				</ul>
+
+				{/* Sidebar footer: replay the first-run wizard / feature tour. */}
+				<div className="flex flex-col gap-1.5 border-t border-sidebar-border px-2 py-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						className="w-full border-sidebar-border bg-sidebar/40 hover:bg-sidebar-accent"
+						aria-label={t("nav.quickSetup")}
+						title={t("nav.quickSetup")}
+						onClick={() => {
+							patchSettings({ onboardingDone: false });
+							broadcastOnboardingRequest();
+							closeSettingsWindow();
+						}}
+					>
+						<Wand2 data-icon="inline-start" />
+						{t("nav.quickSetup")}
+					</Button>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						className="w-full border-sidebar-border bg-sidebar/40 hover:bg-sidebar-accent"
+						aria-label={t("nav.featureTour")}
+						title={t("nav.featureTour")}
+						onClick={() => {
+							broadcastTourRequest();
+							closeSettingsWindow();
+						}}
+					>
+						<Compass data-icon="inline-start" />
+						{t("nav.featureTour")}
+					</Button>
+				</div>
+			</nav>
+
+			{/* Content */}
+			<div
+				ref={contentScrollRef}
+				data-settings-content
+				className="@container/settings-content edda-scroll min-w-0 flex-1 overscroll-y-contain bg-background"
+			>
+				<div data-settings-body className="px-6 py-5">
+					{/* One boundary per pane: a section still loading must not blank out
+					    the panes already visited and kept mounted next to it. */}
+					{NAV.filter((item) => visitedSections.includes(item.id)).map(
+						({ id }) => (
+							<div
+								key={id}
+								data-settings-pane
+								data-active={section === id ? "true" : "false"}
+								hidden={section !== id}
+							>
+								<Suspense fallback={<PaneFallback />}>
+									{renderPane(id)}
+								</Suspense>
+							</div>
+						),
+					)}
+				</div>
+			</div>
+		</>
+	);
+}

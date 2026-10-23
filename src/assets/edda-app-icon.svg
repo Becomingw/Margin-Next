@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Edda</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#2A2B31"/><stop offset="1" stop-color="#141519"/>
+    </linearGradient>
+    <!-- Matte head: light from the upper left, soft falloff to the far edge. -->
+    <radialGradient id="head" cx="300" cy="480" r="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFEFC"/>
+      <stop offset=".45" stop-color="#F1ECE6"/>
+      <stop offset=".8" stop-color="#CFC7BF"/>
+      <stop offset="1" stop-color="#A9A099"/>
+    </radialGradient>
+    <radialGradient id="eye" cx=".4" cy=".3" r=".9">
+      <stop stop-color="#2A2D37"/><stop offset="1" stop-color="#15161B"/>
+    </radialGradient>
+    <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+    <filter id="shade" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="40"/></filter>
+    <clipPath id="tileClip"><rect x="100" y="100" width="824" height="824" rx="184"/></clipPath>
+  </defs>
+  <rect x="100" y="108" width="824" height="824" rx="184" fill="#000" opacity=".2"/>
+  <rect x="100" y="100" width="824" height="824" rx="184" fill="url(#tile)"/>
+  <g clip-path="url(#tileClip)">
+    <!-- soft contact shadow the head casts on the tile -->
+    <ellipse cx="470" cy="770" rx="500" ry="480" fill="#000" opacity=".35" filter="url(#shade)"/>
+    <ellipse cx="390" cy="820" rx="520" ry="500" fill="url(#head)" transform="rotate(-18 390 820)"/>
+    <!-- eyes: upright ovals following the head's tilt; the far one foreshortened -->
+    <ellipse cx="520" cy="590" rx="46" ry="74" fill="url(#eye)" transform="rotate(-14 520 590)"/>
+    <ellipse cx="686" cy="548" rx="40" ry="72" fill="url(#eye)" transform="rotate(-14 686 548)"/>
+    <!-- blush -->
+    <ellipse cx="470" cy="716" rx="64" ry="34" fill="#F29A93" opacity=".55" filter="url(#blur)" transform="rotate(-14 470 716)"/>
+    <ellipse cx="762" cy="660" rx="60" ry="32" fill="#F29A93" opacity=".5" filter="url(#blur)" transform="rotate(-14 762 660)"/>
+  </g>
+  <rect x="102" y="102" width="820" height="820" rx="182" fill="none" stroke="#fff" stroke-opacity=".07" stroke-width="4"/>
+</svg>

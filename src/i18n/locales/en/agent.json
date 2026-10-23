@@ -1,0 +1,295 @@
+{
+	"references": {
+		"openSource": "Go to quoted source",
+		"preview": "Preview quotation",
+		"page": "p. {{page}}",
+		"truncated": "Excerpt shortened. Open the source for the full selection.",
+		"unavailable": "The quoted source is not available in this workspace."
+	},
+	"acpStatus": {
+		"ready": "ACP ready",
+		"failed": "ACP failed",
+		"notLoggedIn": "Not logged in",
+		"notProbed": "Not probed",
+		"notInstalled": "Not installed"
+	},
+	"defaultName": "Edda",
+	"permission": {
+		"title": "Edda needs your permission",
+		"deny": "Deny",
+		"kind": {
+			"allowOnce": "Allow once",
+			"allowAlways": "Always allow",
+			"rejectOnce": "Reject once",
+			"rejectAlways": "Always reject"
+		}
+	},
+	"elicitation": {
+		"title": "Edda needs your input",
+		"submit": "Submit answers",
+		"cancel": "Cancel"
+	},
+	"missing": " (missing)",
+	"switchAgent": "Switch Edda's backend (ACP)",
+	"configBar": {
+		"label": "Model and session options"
+	},
+	"history": {
+		"aria": "Open chat history",
+		"label": "History",
+		"title": "Session history",
+		"description": "Conversations for the current paper or page.",
+		"delete": "Delete from Edda history",
+		"deleteFailed": "Could not delete the conversation from history.",
+		"empty": "No sessions yet.",
+		"restoring": "Restoring session…",
+		"includeExternal": "External",
+		"includeExternalToggle": "Include all sessions",
+		"status": {
+			"running": "Running",
+			"completed": "Completed",
+			"cancelled": "Cancelled",
+			"failed": "Failed"
+		}
+	},
+	"tabs": {
+		"open": "Open conversation {{number}}",
+		"new": "Start a new conversation"
+	},
+	"agentMenu": {
+		"title": "Edda",
+		"empty": "Edda needs a ready ACP backend. Configure one in Settings.",
+		"openSettings": "Open Edda settings"
+	},
+	"composer": {
+		"placeholder": "How can I help you today?",
+		"interruptHint": "Press Esc to interrupt",
+		"queueLabel": "Queued",
+		"queueRemove": "Remove from queue",
+		"contextInstruction": "Available Vault sources (read only when additional context is needed):",
+		"removeContext": "Remove {{path}} from context",
+		"removeSkill": "Remove ${{skill}} from context",
+		"removeSelection": "Remove selected text from context",
+		"selection": "Selection",
+		"selectionChip": "{{title}}",
+		"selectionChipWithPage": "{{title}}:p.{{page}}",
+		"removeVisualDraft": "Remove visual annotation from context",
+		"visualAnnotation": "Visual annotation",
+		"visualAnnotationPage": "p.{{page}}",
+		"visualAnnotationsTitle": "Visual annotations ({{count}})",
+		"visualAnnotationOpen": "View crop and comment",
+		"visualAnnotationOpenAria": "Open visual annotation {{index}}: {{label}}",
+		"visualAnnotationDetailTitle": "Visual annotation {{index}}",
+		"visualAnnotationCommentLabel": "Your note",
+		"visualAnnotationNoComment": "(no note)",
+		"visualAnnotationPreviewAlt": "Cropped PDF region from page {{page}}",
+		"attachImage": "Attach image",
+		"imageFilter": "Images",
+		"attachedImage": "Image",
+		"attachedImagesTitle": "Images ({{count}})",
+		"removeAttachedImage": "Remove image",
+		"attachedImageOpen": "View image",
+		"attachedImageOpenAria": "Open attached image {{index}}",
+		"attachedImageDetailTitle": "Image {{index}}",
+		"attachedImagePreviewAlt": "Attached image {{index}}",
+		"dropImageHint": "Drop image to attach",
+		"imageAcceptError": "Only image files can be attached (PNG, JPEG, WebP, GIF, …).",
+		"imageMaxFilesError": "Too many images. Remove one before adding more.",
+		"imageMaxSizeError": "One or more images exceed the 10 MB size limit.",
+		"imagePickFailed": "Could not open the image picker.",
+		"imageOnlyPrompt": "Please analyze the attached image(s).",
+		"currentFileRemove": "Remove current file from context",
+		"mentionEnterFolder": "Open {{name}}",
+		"mentionBack": "Back to parent folder",
+		"mentionEmptyFolder": "No items in this folder",
+		"fast": "Fast",
+		"fastToggle": "Toggle Fast mode",
+		"collaborationTooltip": "Session mode",
+		"collaboration": {
+			"label": "Mode"
+		},
+		"effort": {
+			"label": "Reasoning effort"
+		},
+		"quick": {
+			"skills": "Skills",
+			"commands": "Backend commands",
+			"manage": "Manage skills…"
+		}
+	},
+	"empty": {
+		"workspace": "Workspace",
+		"waiting": "Edda is getting ready…"
+	},
+	"thinking": "Thinking…",
+	"working": "Working…",
+	"solving": "Solving…",
+	"streaming": {
+		"thinking": "Connecting the dots…",
+		"thinking_alternate": "Turning the question over…",
+		"thinking_third": "Following a thread of thought…",
+		"plan": "Sketching a route through the question…",
+		"plan_alternate": "Laying out the next steps…",
+		"plan_third": "Giving the work a little structure…",
+		"starting": "Edda is opening the research notebook…",
+		"starting_alternate": "Getting the desk ready…",
+		"starting_third": "A moment to settle in…",
+		"waitingModel": "Giving the thought a moment to bloom…",
+		"waitingModel_alternate": "A little room for an idea…",
+		"waitingModel_third": "Still waiting for a spark…",
+		"reconnecting": "Reconnecting the thread…",
+		"read": "Leafing through the material…",
+		"read_alternate": "Looking a little closer…",
+		"read_third": "Following the lines on the page…",
+		"search": "Following the clues…",
+		"search_alternate": "Looking for a useful thread…",
+		"search_third": "Sifting through possibilities…",
+		"execute": "Working at the research bench…",
+		"execute_alternate": "Keeping the little gears turning…",
+		"execute_third": "Taking care of the next step…",
+		"fetch": "Reaching for another source…",
+		"fetch_alternate": "Opening a window onto the material…",
+		"fetch_third": "Following a link in the trail…",
+		"edit": "Working on the requested changes…",
+		"delete": "Removing the requested material…",
+		"move": "Putting the material in its place…",
+		"think": "Turning the question over…",
+		"other": "Keeping the research moving…",
+		"other_alternate": "Tending to the details…",
+		"other_third": "A little work behind the scenes…",
+		"elapsed": "{{count}}s",
+		"writing": "Weaving the answer together…",
+		"writing_alternate": "Putting the ideas into words…",
+		"writing_third": "Giving the answer its shape…"
+	},
+	"copy": "Copy",
+	"copied": "Copied",
+	"edit": {
+		"action": "Edit",
+		"resend": "Resend",
+		"cancel": "Cancel"
+	},
+	"plan": {
+		"title": "Plan",
+		"steps": "{{completed}}/{{total}} steps"
+	},
+	"askUserQuestion": {
+		"submit": "Submit",
+		"submitted": "Submitted",
+		"cancel": "Cancel",
+		"prev": "Back",
+		"next": "Next",
+		"progress": "{{current}} / {{total}}",
+		"freeTextPlaceholder": "Type your answer",
+		"pendingInComposer": "Answer in the questionnaire below",
+		"keyboardHint": "↑↓ options · Space select · Enter confirm",
+		"keyboardHintMulti": "↑↓ options · Space select · Enter next · ←→ pages",
+		"collapse": "Collapse questionnaire",
+		"expand": "Expand questionnaire"
+	},
+	"citation": {
+		"vaultPath": "Vault path referenced by Edda",
+		"resolveFailed": "Could not open citation: {{source}}",
+		"figureNotFound": "Figure not found: {{source}}",
+		"sectionNotFound": "Section not found: {{source}}",
+		"tableNotFound": "Table not found: {{source}}",
+		"algorithmNotFound": "Algorithm not found: {{source}}",
+		"formulaNotFound": "Formula not found: {{source}}",
+		"pageNotFound": "Page not found: {{source}}",
+		"regionNotFound": "Region not found: {{source}}"
+	},
+	"models": {
+		"currentSelection": "Current selection",
+		"locateCurrent": "Locate current model",
+		"defaultGroup": "Models",
+		"favorites": "Favorites",
+		"addToFavorites": "Add to favorites",
+		"removeFromFavorites": "Remove from favorites",
+		"selectTooltip": "Select model (ACP)",
+		"reportedTooltip": "Models appear after Edda's backend reports them",
+		"customOrReportedTooltip": "Search or type a custom model id (third-party / gateway)",
+		"loading": "Loading…",
+		"button": "Model",
+		"searchPlaceholder": "Search models…",
+		"searchOrCustomPlaceholder": "Search or type a model id…",
+		"customGroup": "Custom",
+		"useCustom": "Use “{{id}}”",
+		"emptyNone": "No models yet. Run once so the ACP agent can advertise models.",
+		"emptyNoneCustom": "No models yet. Type a model id above to use a third-party model.",
+		"emptyNoMatch": "No match. Type a full model id to use it as custom."
+	},
+	"messages": {
+		"sources": "Sources",
+		"cancelled": "Stopped the current run.",
+		"desktopOnly": "Open the desktop app to work with Edda.",
+		"noAgent": "Edda needs a backend. Open Settings → Edda to configure one.",
+		"sessionUnavailable": "Could not restore this Edda conversation. Showing the saved answer snapshot when available.",
+		"sessionEmpty": "This session has no replayable messages."
+	},
+	"activity": {
+		"finished": "Edda's work",
+		"incomplete": "Some steps did not finish",
+		"producedFiles": "Files written",
+		"verb": {
+			"read": "Reading files",
+			"edit": "Editing files",
+			"delete": "Deleting files",
+			"move": "Moving files",
+			"search": "Searching",
+			"execute": "Running a command",
+			"fetch": "Opening a page",
+			"think": "Thinking",
+			"other": "Working"
+		},
+		"one": {
+			"read": "Read {{target}}",
+			"edit": "Edit {{target}}",
+			"delete": "Delete {{target}}",
+			"move": "Move {{target}}",
+			"search": "Search “{{target}}”",
+			"execute": "Run {{target}}",
+			"fetch": "Open {{target}}",
+			"think": "Think about {{target}}"
+		},
+		"many": {
+			"read_one": "Read {{count}} file",
+			"read_other": "Read {{count}} files",
+			"edit_one": "Edited {{count}} file",
+			"edit_other": "Edited {{count}} files",
+			"delete_one": "Deleted {{count}} file",
+			"delete_other": "Deleted {{count}} files",
+			"move_one": "Moved {{count}} file",
+			"move_other": "Moved {{count}} files",
+			"search_one": "Searched once",
+			"search_other": "Searched {{count}} times",
+			"execute_one": "Ran {{count}} command",
+			"execute_other": "Ran {{count}} commands",
+			"fetch_one": "Opened {{count}} page",
+			"fetch_other": "Opened {{count}} pages",
+			"think_one": "Thought once",
+			"think_other": "Thought {{count}} times",
+			"other_one": "{{count}} step",
+			"other_other": "{{count}} steps"
+		},
+		"seconds_one": "{{count}}s",
+		"seconds_other": "{{count}}s",
+		"minutes": "{{minutes}}m {{seconds}}s",
+		"summary": "Edda worked for {{duration}}",
+		"details": "Details",
+		"input": "Input",
+		"output": "Output"
+	},
+	"skill": {
+		"applied": "Skill applied: {{name}}",
+		"droppedForCommand": "Backend commands run as typed, so the attached skills were not sent.",
+		"missing": "Skill not found, sent without it: {{names}}"
+	},
+	"plugins": {
+		"title": "Plugins",
+		"active": "New conversations can use",
+		"empty": "No plugins yet. Add MCP servers to give Edda more tools.",
+		"manage": "Manage plugins…",
+		"workspace": "Edda workspace",
+		"workspaceHint": "System plugin: library, marks and Browse tools"
+	}
+}

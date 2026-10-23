@@ -1,0 +1,24 @@
+[workspace]
+members = ["src-tauri", "crates/edda-core"]
+resolver = "2"
+
+# Shared dependencies for the desktop host and reusable business services.
+# Only version + common features live here; `optional`, target-specific
+# sections, and extra features stay in the member crates
+# (`{ workspace = true, features = [...] }` merges on top).
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# tokio features differ per crate (GUI: sync/rt/time/process/io-util/net;
+# CLI: rt-multi-thread/macros; dev: test-util), so declare no features here.
+tokio = "1"
+dirs = "6"
+log = "0.4"
+tempfile = "3"
+
+# Profiles only take effect from the workspace root. Shipped binaries were
+# unstripped and non-LTO (#320): GUI 76MB, headless CLI 31MB.
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1

@@ -1,0 +1,70 @@
+[package]
+name = "edda-core"
+# Keep in lockstep with the desktop `edda` version: `core::http`
+# bakes `CARGO_PKG_VERSION` into the product User-Agent string.
+version = "0.19.0"
+edition = "2021"
+description = "Tauri-independent foundations of Edda (errors, fs, http, paths, sqlite, usage log)"
+authors = ["you"]
+license = "MIT"
+publish = false
+
+[dependencies]
+schemars = "1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+# `fs` for the async VaultFs local backend; `rt` for `blocking::run_blocking`
+# (tokio's blocking pool — tauri's async runtime is itself tokio-backed);
+# `sync`/`process`/`io-util`/`time` for the migrated domain services
+# (import mutexes, PDF worker subprocess, download/parse timeouts);
+# `macros` for join!/select! in import assets, parse and title_search.
+tokio = { workspace = true, features = ["fs", "rt", "sync", "process", "io-util", "time", "macros"] }
+dirs = { workspace = true }
+log = { workspace = true }
+thiserror = "2"
+rusqlite = { version = "0.32", features = ["bundled"] }
+similar = "2.7"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "socks", "multipart", "cookies"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
+async-trait = "0.1.91"
+# `error::ApiResult` and `features::translate` models derive `specta::Type`
+# for the IPC contract; specta is lightweight and pulls in no wry/tao/tauri.
+specta = { version = "2.0.0-rc.22", features = ["derive", "chrono"] }
+which = "7"
+# Migrated domain features (import asset unpack,
+# wiki/vault walks, citation fingerprints, scholar API queries, …).
+flate2 = "1.1.9"
+tar = "0.4.46"
+htmd = "0.5.4"
+pulldown-cmark = { version = "0.13", default-features = false, features = ["html"] }
+bitflags = "2"
+sha2 = "0.11.0"
+hex = "0.4.3"
+walkdir = "2.5.0"
+base64 = "0.22"
+urlencoding = "2"
+url = "2"
+uuid = { version = "1", features = ["v4", "serde"] }
+# Used by lookup batch import (all platforms).
+futures-util = "0.3.33"
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tokio = { workspace = true, features = ["macros", "rt", "fs"] }
+# Unique temp-dir names in `fs::path` tests.
+uuid = { version = "1", features = ["v4"] }
+
+# LiteParse relies on a desktop PDFium binary. Mobile (iOS/Android) uses the
+# paired desktop Host for PDF parsing instead of packaging PDFium in the app.
+# Keep in lockstep with the `edda` crate's target gate.
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+liteparse = "2.13"
+# The PDFium binding liteparse itself sits on (shared dylib, one global loader).
+# `features::pdf_locate` uses the text engine directly for quote → page rects,
+# bypassing liteparse's layout pass.
+liteparse-pdfium = "1.7"
+
+# `http::system_proxy_url` reads the WinINET proxy config (HKCU) on Windows;
+# target deps do not transfer from the `edda` crate, so declare it here too.
+[target.'cfg(windows)'.dependencies]
+winreg = "0.55"

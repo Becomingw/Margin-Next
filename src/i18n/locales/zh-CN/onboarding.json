@@ -1,0 +1,140 @@
+{
+	"title": "欢迎使用 Edda",
+	"subtitle": "在这里，你和 AI 助手一起读论文、记笔记。接下来几步，帮你把工作台调成顺手的样子。",
+	"recommended": "推荐",
+	"steps": {
+		"welcome": "欢迎",
+		"theme": "外观",
+		"proxy": "网络",
+		"agent": "Edda",
+		"translate": "翻译",
+		"layout": "图表公式",
+		"vault": "开始使用"
+	},
+	"welcome": {},
+	"theme": {
+		"title": "选一个喜欢的主题色",
+		"desc": "先挑个顺眼的配色，之后随时可以在设置里改。",
+		"modeSystem": "跟随系统",
+		"modeLight": "浅色",
+		"modeDark": "深色",
+		"uiThemeSelect": "选择 {{name}}"
+	},
+	"proxy": {
+		"title": "配置网络访问",
+		"desc": "如果访问学术站点、GitHub 或下载 Agent 需要代理，可以先在这里配置。",
+		"hint": "关闭时直连；开启后使用本机 HTTP/SOCKS 代理。",
+		"urlLabel": "代理地址",
+		"enabledLabel": "启用网络代理",
+		"probe": "探测"
+	},
+	"agent": {
+		"title": "选一个 AI 助手",
+		"desc": "连接本机支持 ACP 的 Agent。尚未安装时可在这里安装；登录和模型配置由 Agent 自身完成。",
+		"rescan": "重新扫描",
+		"scanning": "扫描中…",
+		"none": "没有发现可用的 AI 助手。先在电脑上安装一个（如 opencode、claude-acp），再点「重新扫描」。",
+		"setDefault": "设为默认",
+		"install": "安装",
+		"installAgentAria": "安装 {{name}} Agent",
+		"installFailed": "安装 Agent 失败",
+		"default": "默认",
+		"probe": "探测",
+		"ready": "就绪",
+		"missing": "未安装",
+		"failed": "探测失败",
+		"notProbed": "未探测",
+		"scanFailed": "扫描 Agent 失败"
+	},
+	"translate": {
+		"title": "设置翻译",
+		"desc": "读外文文献时，划词就能翻译。不想折腾就用内置方案，开箱即用。",
+		"configureOwn": "我有自己的翻译 API",
+		"configureOwnDesc": "使用自己的 DeepL 等翻译 API Key。",
+		"useDefault": "用内置免费翻译（推荐）",
+		"useDefaultDesc": "无需配置，开箱即用。",
+		"apiKeyPlaceholder": "API Key",
+		"endpointPlaceholder": "端点（可选）",
+		"openDocs": "打开服务商官网",
+		"test": "测试",
+		"probeIdle": "尚未测试",
+		"probeProbing": "测试中…",
+		"probeOk": "可用",
+		"probeFail": "请检查你的 Key 后重试"
+	},
+	"layout": {
+		"title": "自动识别图表和公式",
+		"configureOwn": "配置云端服务（推荐）",
+		"configureOwnDesc": "填入 Paddle、MinerU 或兼容 OpenAI 的 API Key，图表公式识别更精准。",
+		"useDefault": "用本地免费模型",
+		"useDefaultDesc": "完全本地运行，无需配置，离线可用；会占用系统性能，速度较慢，复杂版面识别效果稍弱。",
+		"openDocs": "打开服务商官网",
+		"openDocsLabel": "获取 API Key",
+		"test": "测试",
+		"probeIdle": "尚未测试",
+		"probeProbing": "测试中…",
+		"probeOk": "可用",
+		"probeFail": "请检查你的 Key 后重试"
+	},
+	"vault": {
+		"title": "建一个自己的文献库",
+		"desc": "文献库（Vault）就是一个普通文件夹，论文和笔记都存在你自己电脑上。之后随时可以创建新的或换着用。",
+		"create": "新建文献库",
+		"createDesc": "先选择一个独立的 Edda 文件夹。创建完成后，可再选择是否从 Zotero 导入。",
+		"zotero": "从 Zotero 导入",
+		"zoteroOfferTitle": "要从 Zotero 导入吗？",
+		"zoteroOfferDesc": "Edda 文献库已经创建。接下来可以选择 Zotero 数据目录作为导入来源。",
+		"zoteroNo": "不从 Zotero 导入"
+	},
+	"actions": {
+		"start": "开始配置",
+		"next": "下一步",
+		"back": "上一步",
+		"finish": "完成设置"
+	},
+	"tour": {
+		"sidebar": {
+			"title": "文献库与 Vault",
+			"desc": "侧边栏集中了论文库、Vault 文件夹和发现源。所有内容都是你电脑上的 Markdown 与普通文件。"
+		},
+		"library": {
+			"title": "论文库",
+			"desc": "Vault 里的每篇论文都会出现在这里。可排序、按标签筛选、编辑元数据，还能一键导出 BibTeX。"
+		},
+		"coolPapers": {
+			"title": "Cool Papers",
+			"desc": "浏览 arXiv 热门与趋势论文。看到感兴趣的论文，一键在工作区中打开。"
+		},
+		"magicWand": {
+			"title": "魔棒一键入库",
+			"desc": "粘贴 DOI、arXiv ID 或链接，自动抓取元数据、下载 PDF 与 LaTeX 源码。{{magicWandShortcut}} 随时唤起。"
+		},
+		"readPaper": {
+			"title": "阅读并记笔记",
+			"desc": "任意论文旁的闪电按钮会打开分屏：左侧 PDF，右侧 NOTES.md，可直接高亮批注、写入笔记。"
+		},
+		"workspace": {
+			"title": "分屏精读",
+			"desc": "打开任意论文即可分屏：左侧 PDF，右侧 NOTES.md。划词可高亮、批注、翻译或提问。"
+		},
+		"fullTextTranslate": {
+			"title": "全文翻译",
+			"desc": "PDF 工具栏可一键翻译整篇论文。翻译一次后，既可以在原文上对照查看，也可以打开 side-by-side 译文面板。"
+		},
+		"fetchCoolPapersNotes": {
+			"title": "Cool Paper 笔记",
+			"desc": "编辑论文的 NOTES.md 时，点击此按钮即可从 Cool Papers 抓取公开的 Kimi 笔记，并合并到自己的笔记中。"
+		},
+		"agent": {
+			"title": "认识 Edda，你的科研伙伴",
+			"desc": "与 Edda 一起阅读、讨论和审阅。连接本机已登录的 ACP 运行后端，带上一篇论文或一个问题开始对话。"
+		},
+		"titlebar": {
+			"title": "开始探索吧",
+			"desc": "设置已完成。{{settingsShortcut}} 打开设置，{{quickOpenShortcut}} 快速跳转。Vault 里已生成教程笔记，就从那里开始。"
+		},
+		"next": "下一步",
+		"back": "上一步",
+		"done": "完成"
+	}
+}

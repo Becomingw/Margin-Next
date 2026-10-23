@@ -1,0 +1,123 @@
+{
+	"tree": {
+		"openCount_one": "{{count}} 条待处理批注",
+		"openCount_other": "{{count}} 条待处理批注"
+	},
+	"import": {
+		"success_one": "已导入 {{count}} 篇待审论文",
+		"success_other": "已导入 {{count}} 篇待审论文"
+	},
+	"toolbar": {
+		"viewManuscript": "正文审阅",
+		"viewSplit": "双栏对照",
+		"viewPdf": "PDF",
+		"parsingPdf": "正在解析正文…",
+		"reparsePdf": "重新解析 PDF 正文",
+		"trackChanges": "修订",
+		"trackChangesHint": "编辑始终记录为修订；此处仅切换显示方式",
+		"showMarkup": "显示修订",
+		"showClean": "最终文本",
+		"showOriginal": "原始文本",
+		"originalHint": "只读 · 本轮审阅的对比基线",
+		"newComment": "新建批注",
+		"prevItem": "上一处修订",
+		"nextItem": "下一处修订",
+		"acceptChange": "接受此处修订",
+		"acceptAll": "接受全部修订",
+		"rejectChange": "拒绝此处修订",
+		"rejectAll": "拒绝全部修订",
+		"agentChange": "AI 修订",
+		"showAgentNews": "跳到第一条新的 AI 批注或修改",
+		"prevAgent": "上一处 AI 修改或批注",
+		"nextAgent": "下一处 AI 修改或批注",
+		"prevComment": "上一条待处理批注",
+		"nextComment": "下一条待处理批注",
+		"newAgentComments_one": "{{count}} 条新 AI 批注",
+		"newAgentComments_other": "{{count}} 条新 AI 批注",
+		"newAgentEdits_one": "{{count}} 处新 AI 修改",
+		"newAgentEdits_other": "{{count}} 处新 AI 修改",
+		"agentChangeBy": "{{name}} 修订",
+		"authorChange": "作者修订",
+		"agentMenu": "参与审阅的 Agent",
+		"allAgents": "全部 Agent",
+		"unnamedAgent": "AI（未署名）",
+		"agentCounts": "{{changes}} 处修改 · {{comments}} 条批注"
+	},
+	"filter": {
+		"open": "仅显示待处理批注",
+		"all": "显示全部批注"
+	},
+	"empty": {
+		"open": "选中文字可添加批注，直接改字即可记录修订。"
+	},
+	"export": {
+		"button": "导出审阅",
+		"done": "已导出审阅至"
+	},
+	"selection": {
+		"comment": "批注选中内容",
+		"cite": "引用",
+		"singleBlock": "请先在正文中选中文字再添加批注。"
+	},
+	"citation": {
+		"search": "搜索论文库…",
+		"empty": "没有匹配的论文。"
+	},
+	"composer": {
+		"placeholder": "输入批注内容…",
+		"submit": "批注",
+		"cancel": "取消"
+	},
+	"pdf": {
+		"page": "第 {{page}} 页"
+	},
+	"card": {
+		"agent": "AI",
+		"author": "作者",
+		"outdated": "已过时 · 引文已移除",
+		"editedByAgent": "AI 编辑",
+		"editedByAuthor": "作者编辑",
+		"reply": "回复",
+		"replyPlaceholder": "回复…",
+		"resolve": "标记已解决",
+		"reopen": "重新打开",
+		"delete": "删除",
+		"restore": "恢复",
+		"editReply": "编辑回复",
+		"deleteReply": "删除回复",
+		"replyEdited": "已编辑",
+		"replyCount_one": "{{count}} 条回复",
+		"replyCount_other": "{{count}} 条回复"
+	},
+	"column": {
+		"title": "审阅",
+		"openCount_one": "{{count}} 待处理",
+		"openCount_other": "{{count}} 待处理",
+		"comments": "批注",
+		"changes": "修改",
+		"filterOpen": "待处理",
+		"filterAll": "全部",
+		"empty": "在正文中选中文字即可添加批注。",
+		"needsRelocation": "需要重新定位",
+		"export": "导出审阅",
+		"hide": "收起审阅栏",
+		"toggle": "显示批注栏",
+		"unplaced_one": "{{count}} 条不在正文中",
+		"unplaced_other": "{{count}} 条不在正文中",
+		"unplacedHint": "PDF 页面上的批注，或引文已被删除、无法定位的批注"
+	},
+	"changes": {
+		"accept": "接受",
+		"reject": "拒绝",
+		"count_one": "{{count}} 处修订",
+		"count_other": "{{count}} 处修订",
+		"inserted": "插入",
+		"deleted": "删除",
+		"replaced": "替换",
+		"loading": "正在加载修改…",
+		"since": "自 {{time}} 起",
+		"reasonPlaceholder": "本轮说明（可选）",
+		"finishRound": "本轮完成",
+		"empty": "自上一轮以来没有修改。"
+	}
+}

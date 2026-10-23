@@ -1,0 +1,160 @@
+import { Languages, MessageSquarePlus } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+	HIGHLIGHT_COLOR_STACK_WIDTH_DELTA,
+	HighlightColorStack,
+} from "@/components/viewer/pdf/cards/highlight-color-stack";
+import type { ScreenPoint } from "@/components/viewer/pdf/types";
+import { cn } from "@/lib/core/utils";
+import type { HighlightColor } from "@/lib/pdf/highlight/palette";
+import { formatModShortcut } from "@/lib/shell/shortcuts";
+
+type SelectionMenuProps = {
+	/** Screen point near the top-center of the selection (toolbar anchor) */
+	screen: ScreenPoint;
+	/** Create a highlight in the chosen color */
+	onHighlight: (color: HighlightColor) => void;
+	/** Pin the selection as an Agent composer context chip and open the chat. */
+	onAddToChat: () => void;
+	onTranslate: () => void;
+	/**
+	 * Attach the selection as a review comment (PDF review workspaces only).
+	 * Omit to hide the action on ordinary paper tabs.
+	 */
+	onReviewComment?: () => void;
+	/** Show the highlight color stack (needs marks/ to persist into). */
+	showHighlight?: boolean;
+	/** Show the translate action (ephemeral cards on surfaces without marks/). */
+	showTranslate?: boolean;
+};
+
+const BAR_H = 32;
+
+/**
+ * Floating action bar shown next to a text selection: overlapping highlight
+ * color dots (fan left on hover), then Translate / Ask Agent.
+ * The bar is pinned by its right edge so expanding colors only grow left —
+ * action buttons never shift.
+ * Annotate lives on the right-rail selection comment chip instead.
+ * Selected text is copied to the clipboard automatically.
+ * `showHighlight` / `showTranslate` hide the persistent actions on surfaces
+ * without marks/ (remote papers, proxied web pages).
+ */
+export function SelectionMenu({
+	screen,
+	onHighlight,
+	onAddToChat,
+	onTranslate,
+	onReviewComment,
+	showHighlight = true,
+	showTranslate = true,
+}: SelectionMenuProps) {
+	const { t } = useTranslation("viewer");
+	// ⌘K and ⌘L both quote into the full Agent.
+	const addToChatShortcut = formatModShortcut("k");
+
+	const vw = typeof window !== "undefined" ? window.innerWidth : 1200;
+	const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+	// Approximate collapsed width for centering; flex content sizes the real bar.
+	// Pin with CSS `right` so stack width changes grow left without moving actions.
+	const barW = showTranslate ? 190 : 130;
+	const expandPad = showHighlight ? HIGHLIGHT_COLOR_STACK_WIDTH_DELTA : 0;
+	let left = screen.x - barW / 2;
+	// Leave room on the left so the color stack can expand without clipping.
+	left = Math.min(Math.max(12 + expandPad, left), vw - barW - 12);
+	const right = vw - (left + barW);
+	// Prefer just above the selection; flip below if near the top edge.
+	let top = screen.y - BAR_H - 10;
+	let overContent = false;
+	if (top < 12) {
+		top = Math.min(vh - BAR_H - 12, screen.y + 18);
+		// Menu sits below the selection and may cover body text.
+		overContent = true;
+	}
+	// Keep the toolbar on-screen when the selection scrolls out of view; dim it
+	// so it does not look glued to an off-screen anchor.
+	const clampedTop = Math.max(12, Math.min(vh - BAR_H - 12, top));
+	const scrolledAway = clampedTop !== top;
+	top = clampedTop;
+	const dimmed = overContent || scrolledAway;
+
+	return (
+		<div
+			className={cn(
+				"fixed z-50 flex h-8 items-center gap-0.5 rounded-md border border-border bg-background px-1 shadow-floating transition-[background-color,opacity] duration-150 dark:ring-white/10",
+				// Dim when covering body text or when the selection scrolled away.
+				dimmed &&
+					"bg-background/80 opacity-70 backdrop-blur-sm hover:bg-background hover:opacity-100",
+			)}
+			style={{ top, right }}
+			role="toolbar"
+			aria-label={t("selection.menuLabel")}
+			onMouseDown={(e) => e.stopPropagation()}
+		>
+			<TooltipProvider delayDuration={200}>
+				{onReviewComment ? (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								className="size-7"
+								aria-label={t("selection.reviewComment")}
+								onClick={onReviewComment}
+							>
+								<MessageSquarePlus className="size-3.5" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="top">
+							{t("selection.reviewComment")}
+						</TooltipContent>
+					</Tooltip>
+				) : null}
+				{showHighlight ? (
+					<>
+						<HighlightColorStack onSelect={onHighlight} />
+						<div className="mx-0.5 h-4 w-px shrink-0 bg-border" />
+					</>
+				) : null}
+				{showTranslate ? (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								className="size-7"
+								aria-label={t("selection.translate")}
+								onClick={onTranslate}
+							>
+								<Languages className="size-3.5" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="top">
+							{t("selection.translate")}
+						</TooltipContent>
+					</Tooltip>
+				) : null}
+				<button
+					type="button"
+					className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-caption font-medium text-foreground outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring/50 active:scale-[0.97] motion-reduce:active:scale-100"
+					aria-label={`${t("selection.askAgent")} ${addToChatShortcut}`}
+					onClick={onAddToChat}
+				>
+					<span>{t("selection.askAgent")}</span>
+					<kbd className="translate-y-px scale-90 text-caption font-normal text-muted-foreground/80 tabular-nums">
+						{addToChatShortcut}
+					</kbd>
+				</button>
+			</TooltipProvider>
+		</div>
+	);
+}

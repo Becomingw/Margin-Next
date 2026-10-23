@@ -1,0 +1,4 @@
+interface:
+  display_name: "Edda Release"
+  short_description: "Prepare bilingual Edda release notes"
+  default_prompt: "Use $release to prepare a bilingual Edda release and show the notes for review."

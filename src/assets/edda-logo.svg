@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="48 22 104 100" role="img" aria-label="Edda">
+  <title>Edda</title>
+  <defs>
+    <radialGradient id="head" cx="78" cy="44" r="78" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFEFC"/><stop offset=".45" stop-color="#F2EDE7"/><stop offset=".82" stop-color="#D2CAC2"/><stop offset="1" stop-color="#ADA49D"/>
+    </radialGradient>
+    <radialGradient id="eye" cx=".4" cy=".3" r=".9"><stop stop-color="#2A2D37"/><stop offset="1" stop-color="#15161B"/></radialGradient>
+    <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.4"/></filter>
+  </defs>
+  <ellipse cx="100" cy="72" rx="48" ry="45" fill="url(#head)"/>
+  <ellipse cx="88" cy="68" rx="5.4" ry="9.4" fill="url(#eye)" transform="rotate(-8 88 68)"/>
+  <ellipse cx="113" cy="66" rx="5.4" ry="9.4" fill="url(#eye)" transform="rotate(-8 113 66)"/>
+  <ellipse cx="78" cy="84" rx="7.5" ry="4.2" fill="#F29A93" opacity=".55" filter="url(#blur)"/>
+  <ellipse cx="124" cy="81" rx="7.5" ry="4.2" fill="#F29A93" opacity=".55" filter="url(#blur)"/>
+</svg>

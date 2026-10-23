@@ -1,0 +1,285 @@
+{
+	"references": {
+		"openSource": "定位引用原文",
+		"preview": "预览引用",
+		"page": "第 {{page}} 页",
+		"truncated": "引用已截短，可打开来源查看完整选区。",
+		"unavailable": "当前工作区无法打开这条引用的来源。"
+	},
+	"acpStatus": {
+		"ready": "ACP 就绪",
+		"failed": "ACP 失败",
+		"notLoggedIn": "未登录",
+		"notProbed": "未探测",
+		"notInstalled": "未安装"
+	},
+	"defaultName": "Edda",
+	"permission": {
+		"title": "Edda 需要你的许可",
+		"deny": "拒绝",
+		"kind": {
+			"allowOnce": "本次允许",
+			"allowAlways": "始终允许",
+			"rejectOnce": "本次拒绝",
+			"rejectAlways": "始终拒绝"
+		}
+	},
+	"elicitation": {
+		"title": "Edda 需要你的选择",
+		"submit": "提交回答",
+		"cancel": "取消"
+	},
+	"missing": "（缺失）",
+	"switchAgent": "切换 Edda 的运行后端（ACP）",
+	"configBar": {
+		"label": "模型与会话选项"
+	},
+	"history": {
+		"aria": "打开对话历史",
+		"label": "历史",
+		"title": "会话历史",
+		"description": "当前论文或页面的对话。",
+		"delete": "从 Edda 历史中删除",
+		"deleteFailed": "无法从历史中删除该会话。",
+		"empty": "暂无会话。",
+		"restoring": "正在恢复会话……",
+		"includeExternal": "外部会话",
+		"includeExternalToggle": "显示所有会话",
+		"status": {
+			"running": "运行中",
+			"completed": "已完成",
+			"cancelled": "已中止",
+			"failed": "失败"
+		}
+	},
+	"tabs": {
+		"open": "打开会话 {{number}}",
+		"new": "新建会话"
+	},
+	"agentMenu": {
+		"title": "Edda",
+		"empty": "Edda 需要就绪的 ACP 运行后端。请在设置中配置。",
+		"openSettings": "打开 Edda 设置"
+	},
+	"composer": {
+		"placeholder": "今天想做些什么？",
+		"interruptHint": "按 Esc 中止当前输出",
+		"queueLabel": "等待发送",
+		"queueRemove": "从队列移除",
+		"contextInstruction": "可用的知识库来源（需要补充上下文时再读取）：",
+		"removeContext": "从上下文移除 {{path}}",
+		"removeSkill": "从上下文移除 ${{skill}}",
+		"removeSelection": "从上下文移除选中文本",
+		"selection": "选中文本",
+		"selectionChip": "{{title}}",
+		"selectionChipWithPage": "{{title}}:{{page}}页",
+		"removeVisualDraft": "从上下文移除视觉批注",
+		"visualAnnotation": "视觉批注",
+		"visualAnnotationPage": "第{{page}}页",
+		"visualAnnotationsTitle": "视觉批注（{{count}}）",
+		"visualAnnotationOpen": "查看裁剪图与批注",
+		"visualAnnotationOpenAria": "打开视觉批注 {{index}}：{{label}}",
+		"visualAnnotationDetailTitle": "视觉批注 {{index}}",
+		"visualAnnotationCommentLabel": "你的批注",
+		"visualAnnotationNoComment": "（无文字批注）",
+		"visualAnnotationPreviewAlt": "第 {{page}} 页裁剪区域",
+		"attachImage": "附加图片",
+		"imageFilter": "图片",
+		"attachedImage": "图片",
+		"attachedImagesTitle": "图片（{{count}}）",
+		"removeAttachedImage": "移除图片",
+		"attachedImageOpen": "查看图片",
+		"attachedImageOpenAria": "打开附加图片 {{index}}",
+		"attachedImageDetailTitle": "图片 {{index}}",
+		"attachedImagePreviewAlt": "附加图片 {{index}}",
+		"dropImageHint": "松开以附加图片",
+		"imageAcceptError": "只能附加图片文件（PNG、JPEG、WebP、GIF 等）。",
+		"imageMaxFilesError": "图片数量已达上限，请先移除后再添加。",
+		"imageMaxSizeError": "有图片超过 10 MB 大小限制。",
+		"imagePickFailed": "无法打开图片选择器。",
+		"imageOnlyPrompt": "请分析附带的图片。",
+		"currentFileRemove": "从上下文移除当前文件",
+		"mentionEnterFolder": "进入 {{name}}",
+		"mentionBack": "返回上级目录",
+		"mentionEmptyFolder": "此文件夹中没有可选项",
+		"fast": "快速",
+		"fastToggle": "切换快速模式",
+		"collaborationTooltip": "会话模式",
+		"collaboration": {
+			"label": "模式"
+		},
+		"effort": {
+			"label": "推理强度"
+		},
+		"quick": {
+			"skills": "Skills",
+			"commands": "后端命令",
+			"manage": "管理 Skills…"
+		}
+	},
+	"empty": {
+		"workspace": "工作区",
+		"waiting": "Edda 正在准备……"
+	},
+	"thinking": "思考中……",
+	"working": "执行中……",
+	"solving": "求解中……",
+	"streaming": {
+		"thinking": "把线索串成思路…",
+		"thinking_alternate": "换个角度琢磨一下…",
+		"thinking_third": "顺着思绪再走几步…",
+		"plan": "为这个问题画一张路线图…",
+		"plan_alternate": "理一理接下来的步骤…",
+		"plan_third": "给思路搭个小骨架…",
+		"starting": "Edda 正在翻开研究手记…",
+		"starting_alternate": "把研究桌准备好…",
+		"starting_third": "稍等，让思路就位…",
+		"waitingModel": "给思路一点发芽的时间…",
+		"waitingModel_alternate": "给灵感留一点空隙…",
+		"waitingModel_third": "还在等一束思路的火花…",
+		"reconnecting": "正在重新接上思路…",
+		"read": "翻一翻手边的资料…",
+		"read_alternate": "往字里行间看一看…",
+		"read_third": "沿着原文细细读下去…",
+		"search": "循着线索找一找…",
+		"search_alternate": "在资料里找一根线头…",
+		"search_third": "把可能有用的线索筛一筛…",
+		"execute": "在研究台上忙一小会儿…",
+		"execute_alternate": "让小齿轮转一转…",
+		"execute_third": "把眼前这一步处理好…",
+		"fetch": "伸手取一份新的资料…",
+		"fetch_alternate": "打开一扇资料的小窗…",
+		"fetch_third": "沿着链接继续找一找…",
+		"edit": "落笔修改你指定的内容…",
+		"delete": "移除你指定的内容…",
+		"move": "把资料安放到指定位置…",
+		"think": "换个角度琢磨一下…",
+		"other": "让研究再往前走一步…",
+		"other_alternate": "照看一下手边的细节…",
+		"other_third": "在幕后忙一小会儿…",
+		"elapsed": "{{count}}秒",
+		"writing": "把思路织成回答…",
+		"writing_alternate": "让想法慢慢落到纸上…",
+		"writing_third": "给回答理一理脉络…"
+	},
+	"copy": "复制",
+	"copied": "已复制",
+	"edit": {
+		"action": "编辑",
+		"resend": "重新发送",
+		"cancel": "取消"
+	},
+	"plan": {
+		"title": "计划",
+		"steps": "{{completed}}/{{total}} 步"
+	},
+	"askUserQuestion": {
+		"submit": "提交",
+		"submitted": "已提交",
+		"cancel": "取消",
+		"prev": "上一题",
+		"next": "下一题",
+		"progress": "{{current}} / {{total}}",
+		"freeTextPlaceholder": "输入你的回答",
+		"pendingInComposer": "请在下方问卷中作答",
+		"keyboardHint": "↑↓ 选项 · Space 勾选 · Enter 确认",
+		"keyboardHintMulti": "↑↓ 选项 · Space 勾选 · Enter 下一题 · ←→ 切题",
+		"collapse": "收起问卷",
+		"expand": "展开问卷"
+	},
+	"citation": {
+		"vaultPath": "Edda 引用的知识库路径",
+		"resolveFailed": "无法打开引用：{{source}}",
+		"figureNotFound": "找不到 Figure：{{source}}",
+		"sectionNotFound": "找不到章节：{{source}}",
+		"tableNotFound": "找不到表格：{{source}}",
+		"algorithmNotFound": "找不到算法：{{source}}",
+		"formulaNotFound": "找不到公式：{{source}}",
+		"pageNotFound": "找不到页码：{{source}}",
+		"regionNotFound": "找不到区域：{{source}}"
+	},
+	"models": {
+		"currentSelection": "当前选择",
+		"locateCurrent": "定位当前模型",
+		"defaultGroup": "模型",
+		"favorites": "收藏",
+		"addToFavorites": "添加到收藏",
+		"removeFromFavorites": "取消收藏",
+		"selectTooltip": "选择模型 (ACP)",
+		"reportedTooltip": "Edda 的运行后端上报模型后将在此显示",
+		"customOrReportedTooltip": "搜索或输入自定义模型 id（第三方 / 中转）",
+		"loading": "加载中……",
+		"button": "模型",
+		"searchPlaceholder": "搜索模型……",
+		"searchOrCustomPlaceholder": "搜索或输入模型 id……",
+		"customGroup": "自定义",
+		"useCustom": "使用 “{{id}}”",
+		"emptyNone": "暂无模型。先运行一次，让 ACP Agent 上报可用模型。",
+		"emptyNoneCustom": "暂无模型。可在上方输入模型 id 以使用第三方模型。",
+		"emptyNoMatch": "无匹配项。输入完整模型 id 可作为自定义模型使用。"
+	},
+	"messages": {
+		"sources": "来源",
+		"cancelled": "已停止当前运行。",
+		"desktopOnly": "请打开桌面应用以与 Edda 协作。",
+		"noAgent": "Edda 尚无可用的运行后端。请在 设置 → Edda 中配置。",
+		"sessionUnavailable": "无法恢复这段 Edda 对话。若有本地回答快照会一并展示。",
+		"sessionEmpty": "该会话没有可回放的消息。"
+	},
+	"activity": {
+		"finished": "Edda 的工作记录",
+		"incomplete": "部分步骤未完成",
+		"producedFiles": "生成的文件",
+		"verb": {
+			"read": "读取文件",
+			"edit": "编辑文件",
+			"delete": "删除文件",
+			"move": "移动文件",
+			"search": "搜索",
+			"execute": "运行命令",
+			"fetch": "访问网页",
+			"think": "思考",
+			"other": "处理中"
+		},
+		"one": {
+			"read": "读取 {{target}}",
+			"edit": "编辑 {{target}}",
+			"delete": "删除 {{target}}",
+			"move": "移动 {{target}}",
+			"search": "搜索「{{target}}」",
+			"execute": "运行 {{target}}",
+			"fetch": "访问 {{target}}",
+			"think": "思考 {{target}}"
+		},
+		"many": {
+			"read": "读取 {{count}} 个文件",
+			"edit": "编辑 {{count}} 个文件",
+			"delete": "删除 {{count}} 个文件",
+			"move": "移动 {{count}} 个文件",
+			"search": "搜索 {{count}} 次",
+			"execute": "运行 {{count}} 条命令",
+			"fetch": "访问 {{count}} 个网页",
+			"think": "思考 {{count}} 次",
+			"other": "{{count}} 个步骤"
+		},
+		"seconds": "{{count}} 秒",
+		"minutes": "{{minutes}} 分 {{seconds}} 秒",
+		"summary": "Edda 用时 {{duration}}",
+		"details": "详情",
+		"input": "输入",
+		"output": "输出"
+	},
+	"skill": {
+		"applied": "已附带 Skill：{{name}}",
+		"droppedForCommand": "后端命令会原样执行，附带的 Skill 不会一起发送。",
+		"missing": "找不到 Skill，已不带它发送：{{names}}"
+	},
+	"plugins": {
+		"title": "插件",
+		"active": "新对话可使用",
+		"empty": "还没有插件。添加 MCP 服务器，可以给 Edda 更多工具。",
+		"manage": "管理插件…",
+		"workspace": "Edda 工作区",
+		"workspaceHint": "系统插件：论文库、标注与浏览等工具"
+	}
+}

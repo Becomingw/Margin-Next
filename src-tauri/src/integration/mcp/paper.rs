@@ -1,0 +1,330 @@
+//! Paper ref resolution and list/get shaping for MCP tools.
+
+use crate::core::error::AppError;
+use crate::features::paper::catalog::papers::{self, PaperRecord, PaperTag};
+use serde::Serialize;
+use std::path::Path;
+
+const TAG_COLORS: &[&str] = &[
+    "red", "orange", "yellow", "green", "teal", "blue", "indigo", "purple",
+];
+
+#[derive(Debug, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct PaperContextOut {
+    pub paper: PaperGetOut,
+    pub pdf: Option<String>,
+    pub body: Option<String>,
+    pub notes: Option<String>,
+    pub source_directory: Option<String>,
+    pub has_tex: bool,
+    pub layout_index: Option<String>,
+}
+
+pub fn paper_context(vault: &Path, reference: &str) -> Result<PaperContextOut, AppError> {
+    let paper = resolve_paper(vault, reference)?;
+    let relative = crate::core::fs::sanitize_vault_rel(&paper.path).map_err(AppError::message)?;
+    let dir = vault.join(relative);
+    let caps = crate::features::paper::catalog::probe_paper_caps(&dir);
+    let rel = |path: &Path| {
+        path.strip_prefix(vault)
+            .ok()
+            .map(|path| path.to_string_lossy().replace('\\', "/"))
+    };
+    let file = |name: &str| {
+        let path = dir.join(name);
+        path.is_file().then(|| rel(&path)).flatten()
+    };
+    Ok(PaperContextOut {
+        paper: PaperGetOut::from_record(&paper),
+        pdf: caps.pdf_path.as_deref().and_then(rel),
+        body: file("PAPER.md"),
+        notes: file("NOTES.md"),
+        source_directory: dir
+            .join("source")
+            .is_dir()
+            .then(|| rel(&dir.join("source")))
+            .flatten(),
+        has_tex: caps.has_tex,
+        layout_index: file("source/layout-index.json"),
+    })
+}
+
+/// MCP / camelCase field names allowed on `paper_list` (beyond id/path/title).
+const PAPER_LIST_EXTRA_FIELDS: &[&str] = &[
+    "authors",
+    "year",
+    "tags",
+    "doi",
+    "arxivId",
+    "publication",
+    "status",
+    "isRead",
+    // snake_case aliases (CLI parity)
+    "arxiv_id",
+    "is_read",
+];
+
+pub fn looks_like_path(ref_: &str) -> bool {
+    let t = ref_.trim();
+    t.contains('/') || t.contains('\\') || t.starts_with("papers")
+}
+
+pub fn resolve_paper(vault: &Path, ref_: &str) -> Result<PaperRecord, AppError> {
+    let ref_ = ref_.trim();
+    if ref_.is_empty() {
+        return Err(AppError::message("paper ref is required"));
+    }
+    if looks_like_path(ref_) {
+        let path = ref_.replace('\\', "/").trim_matches('/').to_string();
+        return papers::get_by_path(vault, &path)?
+            .ok_or_else(|| AppError::message(format!("paper not found: {ref_}")));
+    }
+    let matches = papers::list_by_id(vault, ref_)?;
+    match matches.len() {
+        0 => Err(AppError::message(format!("paper not found: {ref_}"))),
+        1 => Ok(matches.into_iter().next().expect("len 1")),
+        n => {
+            let paths: Vec<&str> = matches.iter().map(|p| p.path.as_str()).collect();
+            Err(AppError::message(format!(
+                "paper id '{ref_}' is ambiguous ({n} matches): {}",
+                paths.join(", ")
+            )))
+        }
+    }
+}
+
+pub fn parse_tag_spec(raw: &str) -> Result<PaperTag, AppError> {
+    let value = raw.trim();
+    if value.is_empty() {
+        return Err(AppError::message("tag name must not be empty"));
+    }
+    let Some((name, color)) = value.rsplit_once(':') else {
+        return Ok(PaperTag::new(value));
+    };
+    if name.trim().is_empty() {
+        return Err(AppError::message("tag name must not be empty"));
+    }
+    if TAG_COLORS
+        .iter()
+        .any(|id| id.eq_ignore_ascii_case(color.trim()))
+    {
+        return Ok(PaperTag {
+            name: name.trim().to_string(),
+            color: Some(color.trim().to_ascii_lowercase()),
+        });
+    }
+    Ok(PaperTag::new(value))
+}
+
+fn strip_internal_tags(row: &mut PaperRecord) {
+    row.tags.retain(|t| !papers::is_internal_tag_name(&t.name));
+}
+
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct PaperListItem {
+    pub id: String,
+    pub path: String,
+    pub title: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub authors: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub year: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub doi: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub arxiv_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub publication: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_read: Option<bool>,
+}
+
+impl PaperListItem {
+    fn slim(row: &PaperRecord) -> Self {
+        Self {
+            id: row.id.clone(),
+            path: row.path.clone(),
+            title: row.title.clone(),
+            authors: None,
+            year: None,
+            tags: None,
+            doi: None,
+            arxiv_id: None,
+            publication: None,
+            status: None,
+            is_read: None,
+        }
+    }
+
+    fn full(row: &PaperRecord) -> Self {
+        Self {
+            id: row.id.clone(),
+            path: row.path.clone(),
+            title: row.title.clone(),
+            authors: Some(row.authors.clone()),
+            year: row.year,
+            tags: Some(row.tags.iter().map(|t| t.name.clone()).collect()),
+            doi: row.doi.clone(),
+            arxiv_id: row.arxiv_id.clone(),
+            publication: row.publication.clone(),
+            status: Some(row.status.clone()),
+            is_read: Some(row.is_read),
+        }
+    }
+
+    fn with_fields(row: &PaperRecord, fields: &[String]) -> Result<Self, AppError> {
+        let mut item = Self::slim(row);
+        for raw in fields {
+            let f = raw.trim();
+            if f.is_empty() || matches!(f, "id" | "path" | "title") {
+                continue;
+            }
+            if !PAPER_LIST_EXTRA_FIELDS.contains(&f) {
+                return Err(AppError::domain(
+                    "usage",
+                    format!(
+                        "unknown field '{f}' (valid: id, path, title, {})",
+                        PAPER_LIST_EXTRA_FIELDS.join(", ")
+                    ),
+                ));
+            }
+            match f {
+                "authors" => item.authors = Some(row.authors.clone()),
+                "year" => item.year = row.year,
+                "tags" => {
+                    item.tags = Some(row.tags.iter().map(|t| t.name.clone()).collect());
+                }
+                "doi" => item.doi = row.doi.clone(),
+                "arxivId" | "arxiv_id" => item.arxiv_id = row.arxiv_id.clone(),
+                "publication" => item.publication = row.publication.clone(),
+                "status" => item.status = Some(row.status.clone()),
+                "isRead" | "is_read" => item.is_read = Some(row.is_read),
+                _ => {}
+            }
+        }
+        Ok(item)
+    }
+}
+
+pub fn list_papers(
+    vault: &Path,
+    query: Option<&str>,
+    filter_tags: &[String],
+    unread: bool,
+    limit: usize,
+    fields: &[String],
+    full: bool,
+) -> Result<Vec<PaperListItem>, AppError> {
+    let mut rows = papers::list_all_unique_by_id(vault)?;
+    if unread {
+        rows.retain(|r| !r.is_read);
+    }
+    for row in &mut rows {
+        strip_internal_tags(row);
+    }
+    let required: Vec<String> = filter_tags
+        .iter()
+        .map(|t| t.trim().to_string())
+        .filter(|t| !t.is_empty())
+        .collect();
+    if !required.is_empty() {
+        rows.retain(|r| papers::paper_has_all_tags(r, &required));
+    }
+    if let Some(q) = query.map(str::trim).filter(|s| !s.is_empty()) {
+        let q = q.to_ascii_lowercase();
+        rows.retain(|r| {
+            r.title.to_ascii_lowercase().contains(&q)
+                || r.id.to_ascii_lowercase().contains(&q)
+                || r.path.to_ascii_lowercase().contains(&q)
+                || r.authors
+                    .iter()
+                    .any(|a| a.to_ascii_lowercase().contains(&q))
+                || r.tags
+                    .iter()
+                    .any(|t| t.name.to_ascii_lowercase().contains(&q))
+        });
+    }
+    rows.truncate(limit);
+    if full {
+        return Ok(rows.iter().map(PaperListItem::full).collect());
+    }
+    rows.iter()
+        .map(|r| PaperListItem::with_fields(r, fields))
+        .collect()
+}
+
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct PaperListOut {
+    pub items: Vec<PaperListItem>,
+}
+
+#[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct PaperGetOut {
+    pub id: String,
+    pub path: String,
+    pub title: String,
+    pub authors: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub year: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date: Option<String>,
+    pub tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub doi: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub arxiv_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub publication: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "abstract")]
+    pub abstract_text: Option<String>,
+    pub status: String,
+    pub is_read: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bibtex_key: Option<String>,
+    pub added_at: String,
+    pub updated_at: String,
+}
+
+impl PaperGetOut {
+    pub fn from_record(row: &PaperRecord) -> Self {
+        Self {
+            id: row.id.clone(),
+            path: row.path.clone(),
+            title: row.title.clone(),
+            authors: row.authors.clone(),
+            year: row.year,
+            date: row.date.clone(),
+            tags: row.tags.iter().map(|t| t.name.clone()).collect(),
+            doi: row.doi.clone(),
+            arxiv_id: row.arxiv_id.clone(),
+            publication: row.publication.clone(),
+            abstract_text: row.abstract_text.clone(),
+            status: row.status.clone(),
+            is_read: row.is_read,
+            bibtex_key: row.bibtex_key.clone(),
+            added_at: row.added_at.clone(),
+            updated_at: row.updated_at.clone(),
+        }
+    }
+}
+
+pub fn get_paper(vault: &Path, ref_: &str) -> Result<PaperGetOut, AppError> {
+    let mut paper = resolve_paper(vault, ref_)?;
+    strip_internal_tags(&mut paper);
+    Ok(PaperGetOut::from_record(&paper))
+}
+
+pub fn set_read(vault: &Path, ref_: &str, is_read: bool) -> Result<PaperGetOut, AppError> {
+    let paper = resolve_paper(vault, ref_)?;
+    let mut row = papers::set_is_read(vault, &paper.path, is_read)?;
+    strip_internal_tags(&mut row);
+    Ok(PaperGetOut::from_record(&row))
+}

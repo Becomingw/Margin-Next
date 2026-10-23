@@ -1,0 +1,115 @@
+name: Windows release candidate
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing MCP-only application release tag
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: windows-candidate-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  windows:
+    if: github.repository == 'Becomingw/Edda'
+    runs-on: windows-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      EDDA_BUILTIN_API_KEY: ""
+      NODE_OPTIONS: --max-old-space-size=6144
+    steps:
+      - name: Validate tag input
+        run: |
+          if ($env:RELEASE_TAG -notmatch '^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw 'Expected a version tag' }
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+      - name: Verify source and packaging
+        run: |
+          $version = $env:RELEASE_TAG.Substring(1)
+          $config = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
+          if ($config.version -ne $version -or $config.bundle.externalBin.Count -gt 0) { throw 'Expected an MCP-only application matching the tag' }
+          if (!(Test-Path templates/vault/.agents/skills/edda-workspace/SKILL.md)) { throw 'Use historical workflow revisions for legacy releases' }
+          "RELEASE_VERSION=$version" >> $env:GITHUB_ENV
+          "SOURCE_SHA=$(git rev-parse HEAD)" >> $env:GITHUB_ENV
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: windows-mcp-release
+          cache-on-failure: true
+          cache-workspace-crates: true
+      - run: pnpm install --frozen-lockfile
+      # PDF locate tests load PDFium at runtime; stage the same build the
+      # installer bundles and point liteparse at it.
+      - name: Stage PDFium for tests
+        run: |
+          pnpm pdfium:stage
+          if (!(Test-Path src-tauri/pdfium/pdfium.dll)) { throw 'Missing staged PDFium' }
+          "PDFIUM_LIB_PATH=$((Resolve-Path src-tauri/pdfium).Path)" >> $env:GITHUB_ENV
+      - run: cargo test --locked --release -p edda-core
+      - name: Build installer and updater signature
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if (!$env:TAURI_SIGNING_PRIVATE_KEY -or !$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD) { throw 'Updater signing credentials are required' }
+          pnpm tauri build --bundles nsis
+      - name: Verify MCP transport
+        run: cargo test --locked --release -p edda integration::mcp
+      - name: Install and check startup
+        run: |
+          $files = @(Get-ChildItem target/release/bundle/nsis/*.exe)
+          if ($files.Count -ne 1) { throw 'Expected one NSIS installer' }
+          $installer = $files[0]
+          $install = Join-Path $env:RUNNER_TEMP 'Edda 安装验证'
+          $process = Start-Process $installer.FullName -ArgumentList "/S /D=$install" -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "Installer exited $($process.ExitCode)" }
+          if (!(Test-Path (Join-Path $install 'pdfium/pdfium.dll'))) { throw 'Missing PDFium' }
+          $app = Start-Process (Join-Path $install 'edda.exe') -PassThru
+          try {
+            Start-Sleep -Seconds 15
+            $app.Refresh()
+            if ($app.HasExited) { throw 'GUI exited early' }
+            $window = $app.MainWindowHandle -ne 0
+          } finally { if (!$app.HasExited) { Stop-Process -Id $app.Id -Force } }
+          New-Item -ItemType Directory dist-windows -Force | Out-Null
+          @{
+            tag = $env:RELEASE_TAG; sourceSha = $env:SOURCE_SHA; platform = 'windows-x86_64'
+            installerExitCode = $process.ExitCode; mcpTestsPassed = $true; guiSurvivedStartup = $true
+            nativeWindowDetected = $window; authenticode = (Get-AuthenticodeSignature $installer.FullName).Status.ToString()
+          } | ConvertTo-Json | Set-Content dist-windows/build-evidence.json -Encoding utf8NoBOM
+          Copy-Item $installer.FullName dist-windows/
+          Copy-Item "$($installer.FullName).sig" dist-windows/
+          @{
+            version = $env:RELEASE_VERSION
+            platforms = @{'windows-x86_64' = @{
+              signature = (Get-Content "$($installer.FullName).sig" -Raw).Trim()
+              url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:RELEASE_TAG/$($installer.Name)"
+            }}
+          } | ConvertTo-Json -Depth 5 | Set-Content dist-windows/updater-windows.json -Encoding utf8NoBOM
+          Get-ChildItem dist-windows -File | Sort-Object Name | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant())  $($_.Name)"
+          } | Set-Content dist-windows/SHA256SUMS-windows -Encoding utf8NoBOM
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ inputs.tag }}
+          path: dist-windows/*
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,467 @@
+//! Background ACP warm-up whose connection stays pooled for the next turn.
+//!
+//! Setup (spawn → initialize → session/new → preferences → settle) runs inside
+//! the connect future; the resulting connection + fresh session are published
+//! to the [`AgentWarmPool`] and kept alive by a keepalive loop until
+//! evicted, closed (EOF) or idle past [`POOL_IDLE_TTL`]. A slot that never
+//! served a turn has its empty session `session/delete`d at teardown so warm
+//! starts do not pile up empty threads in agent history.
+
+use crate::features::agent::acp::client::{
+    acp_terminals, client_initialize_request, simplified_agent_cwd, timed_acp_initialize,
+    timed_acp_request, to_acp_agent,
+};
+use crate::features::agent::acp::updates::{
+    emit_session_config_options, models_from_config_options,
+};
+use crate::features::agent::models::{AgentDescriptor, WarmResult};
+use crate::features::agent::runtime::events::AgentEventEmitter;
+use crate::features::agent::session::config::apply_model_and_collaboration_prefs;
+use crate::features::agent::session::handlers::{edda_turn_builder, new_registry, WarmIdleHooks};
+use crate::features::agent::session::pool::{
+    pool_key, AgentWarmPool, PoolKey, PooledSlot, POOL_IDLE_TTL,
+};
+use crate::features::agent::workspace_tools::{self, WorkspaceConnection};
+use agent_client_protocol::schema::v1::{DeleteSessionRequest, NewSessionRequest};
+use agent_client_protocol::{Agent, ConnectionTo};
+use std::path::PathBuf;
+use std::sync::atomic::Ordering;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use tokio::sync::watch;
+use uuid::Uuid;
+
+/// Upper bound for the setup half of warm-up (initialize + session/new can be
+/// slow on cold disks / first login); the keepalive keeps running regardless.
+const WARM_SETUP_TIMEOUT: Duration = Duration::from_secs(60);
+
+/// Background warm-up: spawn ACP → initialize → new_session → publish the
+/// live connection to the pool → emit models/usage (no prompt). Used when Chat
+/// opens so the model selector and context meter are ready before first send,
+/// and so the first (and later) prompts skip the cold spawn chain.
+pub async fn warm_agent(
+    app: AgentEventEmitter,
+    desc: AgentDescriptor,
+    vault_path: Option<String>,
+    preferred_model_id: Option<String>,
+    preferred_collaboration_mode_id: Option<String>,
+    remote: Option<Arc<dyn crate::features::agent::remote_host::RemoteAgentLaunch>>,
+    pool: Arc<AgentWarmPool>,
+) -> WarmResult {
+    let agent_id = desc.id.clone();
+    let session_id = Uuid::new_v4().to_string();
+    let cwd = simplified_agent_cwd(&if let Some(ref r) = remote {
+        r.agent_cwd()
+    } else {
+        vault_path
+            .map(PathBuf::from)
+            .filter(|p| p.is_dir())
+            .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
+    });
+    let key: PoolKey = pool_key(&desc, cwd.clone(), remote.as_ref());
+
+    // Healthy pooled slot from an earlier warm: reuse its cached models /
+    // usage instead of spawning a second agent process.
+    if let Some((models, usage)) = pool.snapshot_warm_result(&key) {
+        log::debug!(
+            target: "edda::agent",
+            "agent={} warm reused pooled slot cwd={}",
+            agent_id,
+            cwd.display()
+        );
+        return WarmResult {
+            agent_id,
+            ok: true,
+            models,
+            usage_used: usage.map(|(u, _)| u),
+            usage_size: usage.map(|(_, s)| s),
+            error: None,
+        };
+    }
+
+    let local_workspace = remote.is_none();
+    let acp = match to_acp_agent(&desc, Some(&cwd), remote.as_deref()) {
+        Ok(a) => a,
+        Err(e) => {
+            return WarmResult {
+                agent_id,
+                ok: false,
+                models: None,
+                usage_used: None,
+                usage_size: None,
+                error: Some(e.to_string()),
+            };
+        }
+    };
+
+    let models_out: Arc<Mutex<Option<crate::features::agent::models::AgentModelsEvent>>> =
+        Arc::new(Mutex::new(None));
+    let usage_out: Arc<Mutex<Option<(u64, u64)>>> = Arc::new(Mutex::new(None));
+    let idle = WarmIdleHooks {
+        app: app.clone(),
+        session_id: session_id.clone(),
+        agent_id: agent_id.clone(),
+        usage: usage_out.clone(),
+    };
+    let registry = new_registry();
+    let terminals = acp_terminals(Some(cwd.clone()));
+    let (setup_tx, setup_rx) = tokio::sync::oneshot::channel::<Result<(), String>>();
+
+    // Everything the connect closure needs; the spawned task below holds the
+    // connect future (and with it the agent process) for the pool's lifetime.
+    let closure_ctx = WarmSetupCtx {
+        local_workspace,
+        app: app.clone(),
+        key: key.clone(),
+        cwd,
+        pool: pool.clone(),
+        session_id: session_id.clone(),
+        agent_id: agent_id.clone(),
+        agent_name: desc.name.clone(),
+        preferred_model_id,
+        preferred_collaboration_mode_id,
+        models_out: models_out.clone(),
+        usage_out: usage_out.clone(),
+        terminals: terminals.clone(),
+        registry: registry.clone(),
+    };
+
+    tauri::async_runtime::spawn(async move {
+        let result = edda_turn_builder!(terminals, registry, Some(idle))
+            .connect_with(acp, move |connection: ConnectionTo<Agent>| {
+                closure_ctx.setup_and_keepalive(connection, setup_tx)
+            })
+            .await;
+        if let Err(e) = result {
+            log::debug!(target: "edda::agent", "warm connection ended: {e}");
+        }
+    });
+
+    let setup = tokio::time::timeout(WARM_SETUP_TIMEOUT, setup_rx).await;
+    match setup {
+        // Setup published a slot (or the sender dropped after a failed send).
+        Ok(Ok(setup)) => match setup {
+            Ok(()) => {
+                let models = models_out.lock().ok().and_then(|g| g.clone());
+                let usage = usage_out.lock().ok().and_then(|g| *g);
+                WarmResult {
+                    agent_id,
+                    ok: true,
+                    models,
+                    usage_used: usage.map(|(u, _)| u),
+                    usage_size: usage.map(|(_, s)| s),
+                    error: None,
+                }
+            }
+            Err(error) => WarmResult {
+                agent_id,
+                ok: false,
+                models: None,
+                usage_used: None,
+                usage_size: None,
+                error: Some(error),
+            },
+        },
+        Ok(Err(_dropped)) => WarmResult {
+            agent_id,
+            ok: false,
+            models: None,
+            usage_used: None,
+            usage_size: None,
+            error: Some("warm connection closed before setup finished".to_string()),
+        },
+        Err(_elapsed) => {
+            // The background task keeps running; a late publish still benefits
+            // the next run (take does not consult the warm gate).
+            WarmResult {
+                agent_id,
+                ok: false,
+                models: None,
+                usage_used: None,
+                usage_size: None,
+                error: Some(format!(
+                    "warm setup timed out after {}s",
+                    WARM_SETUP_TIMEOUT.as_secs()
+                )),
+            }
+        }
+    }
+}
+
+/// Setup + keepalive halves of the pooled warm connection, extracted so the
+/// closure passed to `connect_with` stays a thin move wrapper.
+struct WarmSetupCtx {
+    local_workspace: bool,
+    app: AgentEventEmitter,
+    key: PoolKey,
+    cwd: PathBuf,
+    pool: Arc<AgentWarmPool>,
+    session_id: String,
+    agent_id: String,
+    /// The Agent's name in Edda, which signs its review writes.
+    agent_name: String,
+    preferred_model_id: Option<String>,
+    preferred_collaboration_mode_id: Option<String>,
+    models_out: Arc<Mutex<Option<crate::features::agent::models::AgentModelsEvent>>>,
+    usage_out: Arc<Mutex<Option<(u64, u64)>>>,
+    terminals: Arc<tokio::sync::Mutex<crate::features::agent::acp::terminal::AcpTerminalManager>>,
+    registry: crate::features::agent::session::handlers::TurnRegistry,
+}
+
+/// Teardown state returned by setup and consumed by the keepalive loop.
+struct KeepaliveCtx {
+    workspace_tools: WorkspaceConnection,
+    // Do not keep our own stop channel alive after the pooled owner is dropped.
+    end_tx: std::sync::Weak<watch::Sender<bool>>,
+    end_rx: watch::Receiver<bool>,
+    activity_rx: watch::Receiver<u64>,
+    used: Arc<std::sync::atomic::AtomicBool>,
+    supports_delete: bool,
+    acp_session_id: agent_client_protocol::schema::v1::SessionId,
+    agent_id: String,
+}
+
+impl Drop for KeepaliveCtx {
+    fn drop(&mut self) {
+        if let Some(tools) = self.workspace_tools.tools() {
+            tools.stop();
+        }
+    }
+}
+
+impl WarmSetupCtx {
+    async fn setup_and_keepalive(
+        self,
+        connection: ConnectionTo<Agent>,
+        setup_tx: tokio::sync::oneshot::Sender<Result<(), String>>,
+    ) -> Result<(), agent_client_protocol::Error> {
+        match self.setup(&connection).await {
+            Ok(keepalive) => {
+                let _ = setup_tx.send(Ok(()));
+                self.keepalive(&connection, keepalive).await;
+                Ok(())
+            }
+            Err(error) => {
+                let _ = setup_tx.send(Err(error.to_string()));
+                Err(error)
+            }
+        }
+    }
+
+    /// initialize → session/new → preferences → settle → publish the slot.
+    async fn setup(
+        &self,
+        connection: &ConnectionTo<Agent>,
+    ) -> Result<KeepaliveCtx, agent_client_protocol::Error> {
+        let init = timed_acp_initialize(
+            connection
+                .send_request(client_initialize_request())
+                .block_task(),
+        )
+        .await?;
+        let session_caps = &init.agent_capabilities.session_capabilities;
+        let can_resume = session_caps.resume.is_some();
+        let can_load = init.agent_capabilities.load_session;
+        let workspace_tools = workspace_tools::connect(
+            &self.app,
+            &self.cwd,
+            &init.agent_capabilities,
+            self.registry.clone(),
+            self.local_workspace,
+            &self.agent_name,
+        )
+        .await;
+
+        let new_session = timed_acp_request(
+            "new_session",
+            connection
+                .send_request(
+                    NewSessionRequest::new(self.cwd.clone())
+                        .mcp_servers(workspace_tools::servers(&workspace_tools)),
+                )
+                .block_task(),
+        )
+        .await?;
+
+        let acp_session_id = new_session.session_id;
+        let config_options = apply_model_and_collaboration_prefs(
+            connection,
+            &self.session_id,
+            &self.agent_id,
+            &acp_session_id,
+            new_session.config_options.unwrap_or_default(),
+            self.preferred_model_id.clone(),
+            self.preferred_collaboration_mode_id.clone(),
+        )
+        .await;
+        emit_session_config_options(&self.app, &self.session_id, &self.agent_id, &config_options);
+        if let Some(ev) =
+            models_from_config_options(&self.session_id, &self.agent_id, &config_options)
+        {
+            if let Ok(mut g) = self.models_out.lock() {
+                *g = Some(ev);
+            }
+        }
+
+        // Brief settle so agents can push usage/config updates after session create.
+        tokio::time::sleep(Duration::from_millis(400)).await;
+
+        let (end_tx, end_rx) = watch::channel(false);
+        let end_tx = Arc::new(end_tx);
+        let end_weak = Arc::downgrade(&end_tx);
+        let (activity_tx, activity_rx) = watch::channel(0u64);
+        let used = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        self.pool.publish(PooledSlot {
+            key: self.key.clone(),
+            connection: connection.clone(),
+            acp_session_id: acp_session_id.clone(),
+            config_options,
+            can_resume,
+            can_load,
+            terminals: self.terminals.clone(),
+            registry: self.registry.clone(),
+            workspace_tools: workspace_tools.clone(),
+            end: end_tx,
+            activity: activity_tx,
+            used: used.clone(),
+            models: self.models_out.lock().ok().and_then(|g| g.clone()),
+            usage: self.usage_out.lock().ok().and_then(|g| *g),
+        });
+        log::debug!(
+            target: "edda::agent",
+            "agent={} warm slot published session={}",
+            self.agent_id,
+            acp_session_id
+        );
+
+        Ok(KeepaliveCtx {
+            workspace_tools,
+            end_tx: end_weak,
+            end_rx,
+            activity_rx,
+            used,
+            supports_delete: session_caps.delete.is_some(),
+            acp_session_id,
+            agent_id: self.agent_id.clone(),
+        })
+    }
+
+    /// Hold the connection open until evicted, closed (EOF) or idle past the
+    /// TTL, then delete the empty session when the slot never served a turn
+    /// (agents without `sessionCapabilities.delete` keep today's debug log).
+    async fn keepalive(&self, connection: &ConnectionTo<Agent>, mut slot: KeepaliveCtx) {
+        let mut idle_deadline = tokio::time::Instant::now() + POOL_IDLE_TTL;
+        let reason = loop {
+            tokio::select! {
+                changed = slot.end_rx.changed() => {
+                    if changed.is_err() || *slot.end_rx.borrow() {
+                        break "evicted";
+                    }
+                }
+                _ = connection.incoming_closed() => { break "closed"; }
+                changed = slot.activity_rx.changed() => {
+                    if changed.is_ok() {
+                        // A turn took/released/routed traffic on this slot.
+                        idle_deadline = tokio::time::Instant::now() + POOL_IDLE_TTL;
+                    } else {
+                        break "activity-source-dropped";
+                    }
+                }
+                _ = tokio::time::sleep_until(idle_deadline) => {
+                    if slot.end_tx.upgrade().is_none_or(|end| retire_if_idle(&self.registry, &end)) {
+                        break "idle-timeout";
+                    }
+                    // Slow model output or a pending permission question is
+                    // still an active turn, even without incoming traffic.
+                    idle_deadline = tokio::time::Instant::now() + POOL_IDLE_TTL;
+                }
+            }
+        };
+        // Retire before awaiting session/delete: the slot may still be in the
+        // pool, and EOF need not arrive when connect_with's foreground returns.
+        if let Some(end) = slot.end_tx.upgrade() {
+            end.send_replace(true);
+        }
+        log::debug!(
+            target: "edda::agent",
+            "agent={} warm slot exiting ({reason})",
+            slot.agent_id
+        );
+
+        if !slot.used.load(Ordering::SeqCst) {
+            if slot.supports_delete {
+                match timed_acp_request(
+                    "delete_session",
+                    connection
+                        .send_request(DeleteSessionRequest::new(slot.acp_session_id.clone()))
+                        .block_task(),
+                )
+                .await
+                {
+                    Ok(_) => log::debug!(
+                        target: "edda::agent",
+                        "agent={} warm deleted unused session {}",
+                        slot.agent_id,
+                        slot.acp_session_id
+                    ),
+                    Err(e) => log::debug!(
+                        target: "edda::agent",
+                        "agent={} warm session/delete failed for {}: {e}",
+                        slot.agent_id,
+                        slot.acp_session_id
+                    ),
+                }
+            } else {
+                log::debug!(
+                    target: "edda::agent",
+                    "agent={} warm left unused session {} (no sessionCapabilities.delete)",
+                    slot.agent_id,
+                    slot.acp_session_id
+                );
+            }
+        }
+    }
+}
+
+/// Serialize idle retirement with installing a turn. A taker that lost this
+/// race checks the end signal after installation, before sending any request.
+fn retire_if_idle<T>(registry: &Mutex<Option<T>>, end: &watch::Sender<bool>) -> bool {
+    let Ok(turn) = registry.lock() else {
+        end.send_replace(true);
+        return true;
+    };
+    if turn.is_some() {
+        return false;
+    }
+    end.send_replace(true);
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn idle_timeout_does_not_retire_an_active_silent_turn() {
+        let registry = Mutex::new(Some(()));
+        let (end, keepalive) = watch::channel(false);
+        assert!(!retire_if_idle(&registry, &end));
+        assert!(!*keepalive.borrow());
+        *registry.lock().unwrap() = None;
+        assert!(retire_if_idle(&registry, &end));
+        assert!(*keepalive.borrow());
+    }
+
+    #[test]
+    fn retirement_signal_is_visible_to_a_late_turn_before_cleanup() {
+        let registry = Mutex::<Option<()>>::new(None);
+        let (end, keepalive) = watch::channel(false);
+        assert!(retire_if_idle(&registry, &end));
+        *registry.lock().unwrap() = Some(());
+        // The taker's post-install is_alive check sees retirement even though
+        // the driver and its receiver still exist (e.g. session/delete pending).
+        assert!(*end.borrow());
+        assert!(!end.is_closed());
+        drop(keepalive);
+    }
+}

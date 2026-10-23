@@ -1,0 +1,70 @@
+/* Revision type is semantic; author identity belongs to the margin, not to
+ * the insertion/deletion color. All materials derive from the shared tokens. */
+:root,
+.dark {
+	--review-insert: color-mix(
+		in oklch,
+		var(--icon-green) 75%,
+		var(--foreground)
+	);
+	--review-delete: var(--destructive);
+	--review-comment: var(--brand);
+}
+
+.review-workspace button:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 2px;
+}
+
+.review-ribbon button {
+	min-height: 1.75rem;
+}
+
+.review-manuscript .edda-scroll {
+	background: var(--muted);
+	padding-inline: 1rem;
+}
+
+.review-manuscript [data-slate-editor] {
+	max-width: 52rem;
+	margin-inline: auto;
+	border-inline: 1px solid var(--hairline-soft);
+	background: var(--card);
+	padding-top: 2.5rem;
+}
+
+.review-change-insert {
+	color: var(--review-insert);
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
+	text-decoration-skip-ink: none;
+}
+
+.review-change-delete {
+	color: var(--review-delete);
+	text-decoration: line-through;
+	text-decoration-thickness: 1px;
+}
+
+.review-change[data-review-active="true"] {
+	background: var(--accent);
+	outline: 1px solid var(--ring);
+	outline-offset: 2px;
+}
+
+.review-surface[data-compact="true"] {
+	flex-direction: column;
+}
+
+.review-surface[data-compact="true"] .review-manuscript .edda-scroll {
+	padding-inline: 0;
+}
+
+.review-rail[data-compact="true"] {
+	width: 100%;
+	height: 40%;
+	max-height: 18rem;
+	border-left: 0;
+	border-top: 1px solid var(--hairline-soft);
+}

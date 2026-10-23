@@ -1,0 +1,93 @@
+/* ModelScope papers: the feed and detail pages at panel widths. Only stable
+   hooks and classes the page script adds (edda-*) are matched; the site's
+   Emotion classes (acss-*) are content-hashed per release. */
+/* The panel is a paper feed, not a browser: the global nav only offers ways out. */
+header.antd5-layout-header { display: none !important; }
+/* ModelScope shows an onboarding tour that locks body scrolling and dims the feed.
+   The panel is for browsing papers; suppress the tour entirely. */
+.antd5-tour,
+.antd5-tour-mask,
+.antd5-tour-target-placeholder { display: none !important; }
+/* The tour injects `html body { overflow-y: hidden }` via a runtime style tag. */
+html body { overflow-y: visible !important; }
+
+.edda-import-titlerow {
+  display: flex;
+  /* The title is a fixed two-line-tall box holding one line at the top, so
+     centring against it would sit the button well below the text. */
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+/* The title keeps its own width clamp and ellipsis; the button never shrinks. */
+.edda-import-titlerow > :first-child { flex: 0 1 auto; min-width: 0; }
+
+/* The view's viewport is the dock panel, not the desktop window, and the site
+   pins every page at 1280px (a min-width on the root, a fixed width on the
+   layout). Lift both at any width, or anything narrower than 1280px scrolls
+   sideways with the left half of the feed cut off. */
+html, html body, [class*="ms-page-"] { min-width: 0 !important; }
+[class*="ms-page-layout"] { width: auto !important; max-width: 100% !important; }
+/* The centred 1280px column never needed a gutter; a panel-wide one does. */
+main.ms-page-container { box-sizing: border-box !important; padding-inline: 20px !important; }
+.edda-paper-layout {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+/* Single column below this. Only mark ancestors of paper/search content;
+   never depend on the site's hashed CSS. */
+@media (max-width: 56rem) {
+  html, html body { width: 100% !important; }
+  .edda-paper-layout {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    flex-basis: auto !important;
+    flex-wrap: wrap !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .edda-paper-card {
+    display: block !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-wrap: anywhere;
+  }
+  .edda-paper-card > div { box-sizing: border-box; max-width: 100% !important; }
+  .edda-import-titlerow > :first-child { flex: 1 1 0; max-width: 100% !important; }
+  .edda-paper-layout.antd5-input-wrapper,
+  .edda-paper-layout.antd5-input-affix-wrapper {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+  main input { min-width: 0 !important; max-width: 100% !important; }
+  main img, main video { max-width: 100%; }
+  main pre { max-width: 100%; overflow: auto; }
+}
+/* The page title and the search share a row: the search gives up width so the
+   title never breaks per character, and the pair wraps once neither fits. */
+.edda-search-row { flex-wrap: wrap !important; row-gap: 12px; }
+.edda-search-row > :not(.edda-search-block) { min-width: max-content !important; }
+.edda-search-block {
+  flex: 1 1 18rem !important;
+  max-width: 32rem !important;
+  width: auto !important;
+}
+/* Feed tabs keep their labels on one line; the submit group wraps below them. */
+.edda-feed-toolbar { flex-wrap: wrap !important; gap: 8px 16px; }
+.edda-feed-toolbar > :first-child,
+.edda-feed-toolbar > :first-child > * {
+  flex: none !important;
+  width: auto !important;
+  min-width: max-content !important;
+}
+.edda-feed-toolbar > :last-child { margin-left: auto; }
+/* Detail page: the related-models column drops below the reader instead of
+   squeezing it to a word per line. */
+.edda-detail-columns { flex-wrap: wrap !important; row-gap: 16px; }
+.edda-detail-columns > :first-child { flex: 1 1 36rem !important; min-width: 0 !important; }
+.edda-detail-columns > :last-child { flex: 1 1 18rem !important; min-width: 0 !important; }

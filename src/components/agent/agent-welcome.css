@@ -1,0 +1,157 @@
+.agent-welcome {
+	--bot-shadow: oklch(0 0 0 / 0.16);
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	container: agent-welcome / size;
+	overflow: hidden;
+}
+
+.dark .agent-welcome {
+	--bot-shadow: oklch(0 0 0 / 0.4);
+}
+
+.agent-welcome-content {
+	display: flex;
+	height: 100%;
+	min-width: 0;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.25rem;
+	padding: 1rem 1.5rem 2.5rem;
+}
+
+.agent-welcome-scene {
+	position: relative;
+	width: 11rem;
+	max-width: 100%;
+	flex-shrink: 0;
+	aspect-ratio: 5 / 4;
+	contain: layout paint;
+}
+
+.agent-welcome-float,
+.agent-welcome-body,
+.agent-welcome-look,
+.agent-welcome-look svg {
+	width: 100%;
+	height: 100%;
+}
+
+.agent-welcome-float {
+	animation: agent-welcome-float 5.6s ease-in-out infinite;
+}
+
+.agent-welcome-shadow-wrap {
+	position: absolute;
+	inset: 0;
+	transform-origin: 50% 85%;
+}
+
+.agent-welcome-shadow {
+	position: absolute;
+	bottom: 11.5%;
+	left: 50%;
+	width: 44%;
+	height: 7.5%;
+	background: radial-gradient(ellipse, var(--bot-shadow), transparent 70%);
+	animation: agent-welcome-shadow 5.6s ease-in-out infinite;
+}
+
+.agent-welcome-blink {
+	transform-box: fill-box;
+	transform-origin: center;
+	animation: agent-welcome-blink 6.4s ease-in-out infinite;
+}
+
+.agent-welcome-blush {
+	transition: opacity 0.25s ease;
+}
+
+.agent-welcome-caption {
+	display: flex;
+	max-width: min(100%, 22rem);
+	min-width: 0;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	color: var(--muted-foreground);
+	font-size: 0.75rem;
+}
+
+.agent-welcome
+	:is(.agent-welcome-float, .agent-welcome-shadow, .agent-welcome-blink) {
+	animation-play-state: paused;
+}
+
+.agent-welcome[data-animate="true"]
+	:is(.agent-welcome-float, .agent-welcome-shadow, .agent-welcome-blink) {
+	animation-play-state: running;
+}
+
+@keyframes agent-welcome-float {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-0.3rem);
+	}
+}
+@keyframes agent-welcome-shadow {
+	0%,
+	100% {
+		transform: translateX(-50%) scaleX(1);
+		opacity: 1;
+	}
+	50% {
+		transform: translateX(-50%) scaleX(0.84);
+		opacity: 0.65;
+	}
+}
+@keyframes agent-welcome-blink {
+	0%,
+	40%,
+	44%,
+	76%,
+	80%,
+	100% {
+		transform: scaleY(1);
+	}
+	42%,
+	78% {
+		transform: scaleY(0.12);
+	}
+}
+@container agent-welcome (height < 18rem) {
+	.agent-welcome-content {
+		padding: 0.5rem 1rem;
+		gap: 0;
+	}
+	.agent-welcome-scene {
+		width: 7.5rem;
+	}
+}
+@container agent-welcome (height < 12rem) {
+	.agent-welcome-content {
+		flex-direction: row;
+		gap: 0.5rem;
+	}
+	.agent-welcome-scene {
+		width: 5rem;
+	}
+	.agent-welcome-caption {
+		justify-content: flex-start;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.agent-welcome
+		:is(.agent-welcome-float, .agent-welcome-shadow, .agent-welcome-blink) {
+		animation: none;
+	}
+	.agent-welcome-shadow {
+		transform: translateX(-50%);
+	}
+}

@@ -1,0 +1,67 @@
+# 翻译
+
+应用级可插拔翻译：内置 provider + 免费 MT + 商用 BYOK + BYOA Agent。
+
+## 设置
+
+Settings → **翻译**：
+
+- **默认服务** 下拉：内置 provider（构建里注入了 key 时）、免费 MT 与 Agent 始终可选；商用仅列出已配置者。打开下拉时对免费 MT 与已配置商用并行 probe。
+- **内置 provider**（id `builtin`）：凭证由构建期环境变量编入 Host，卡片**没有任何凭证字段**（无 key / baseUrl / model）。可用性来自 Host 命令 `builtin_provider_status` 的 `available`，**不参与 probe**（探测它会真的发一次翻译请求）；不可用时选项禁用或隐藏，当前已选中它时仍保留在列表里。构建里没有 key 时选中它会拿到 `translate.no_builtin_key` 标记，由 `displayTranslateError`（`src/lib/translate/errors.ts`，仿 `displayAgentError`：子串匹配标记 → `i18n.t(...)`，否则原样返回）在划词翻译与全文翻译的 `notifyError` 调用点转成文案，不裸露标记串。标记能到前端是因为 `invokeTranslateText`（`src/lib/translate/api.ts`）只对**已知**翻译标记逐字抛出 `error.code`，其余情况抛 Host 的人类可读 `message`——`AppError::code()` 还会返回 `io` / `json` / `sqlite` 等通用码，按"非 `message` 即标记"判断迟早会把裸码弹给用户。注入 key 的构建里它是新装默认服务——新装没有 `settings.json`，Host `read_file` 返回 `AppSettings::default()`，所以**首次安装的默认值由 Rust `default_translate_provider()` 决定**；前端 `DEFAULT_TRANSLATE_SETTINGS` 只在浏览器 dev（不可能有 key）里生效。
+- 目标语言、划词自动翻译；开启后，PDF 选区文本提取完成即自动启动翻译并打开结果卡，关闭时仍可从选区菜单手动翻译。
+- **商用 API** 卡片仅填写 key / endpoint / region / model；点「确定」后：
+  - 将 API key 写入 Host `settings.json`（Unix 权限 `0600`）；WebView 只保留同长度 `*` 掩码，不再回显明文。
+  - Host `settings_get` / `settings:changed` 对 key 按字符 redact 为 `*`；`settings_set` 收到纯 `*` 串时保留原密钥。
+  - `translate_text` 在 key 缺省或为 `*` 掩码时从 Host 配置解析真实密钥。
+  - 随后做一次连通性 probe。卡片不承担「设为默认」选择。
+- 默认服务为 Agent 时展示 Agent / 模型座。
+
+## 消费方
+
+- PDF 划词菜单「翻译」（首要入口）。
+  - **默认临时**：结果只在当前阅读会话内存中，不写 `marks/`、不进入备注列表，也不产生页边针。未固定卡片保留到下一次翻译 / 打开其他 mark 卡 / 手动关闭，不在译完后用短计时器自动消失。
+  - **固定 / 移动 / 调整大小**：标题栏图钉固定卡片，继续划选时可保留多张卡，正在进行的请求继续完成。拖动标题移动、拖动右下角调整宽高，操作时自动固定；对应控件聚焦后支持方向键（16px，Shift 为 4px 微调）。取消固定后回到原文旁，关闭文档释放所有临时卡片与缓存。切换非活动文档时隐藏浮层。
+  - **跟随原文**：卡片像标注一样锚定在原文上——位置按「原文锚点 + 用户放置的偏移」计算，随 PDF 滚动 / 缩放移动，滚出阅读区时一起滚出，不会停在屏幕边缘；卡片放在裁剪到阅读区的浮层里，不会盖住标签栏和工具栏。新卡默认开在选区左侧（阅读区内放不下则换到右侧），下方空间不足时开在原文上方（底边贴原文，方向在卡片显示期间不变）。原文所在页被虚拟化卸载时卡片暂不显示。
+  - **显示对应原文**：指针悬停或拖动卡片时，用浅色框标出它翻译的原文，并以虚线连到卡片。
+  - **转为备注**：译文完整且无错误时，便笺图标把译文和划选时的原文 / 各页几何快照交给 `usePdfHighlights.createSelectionNote`，创建高亮 + `contents` 并写入 `marks/annotations.json`；跨页选区只在首个高亮附一份译文。保存成功后移除临时卡片；失败回滚新建高亮、保留卡片，并通过 `notifyError` 提示，重试不重复创建。固定本身不保存备注。
+  - 同页、同位置、同原文的重复划选复用卡片 / 请求（归一坐标容忍 0.001 的舍入误差）；配置一致时复用会话内完整译文，最多缓存 32 张已关闭卡片，固定卡片不被淘汰。切换服务、端点、模型或目标语言后重译。滚动 / PDF 缩放只重定位未固定卡片，不重复触发自动翻译。
+  - 替换未固定请求、关闭卡片或关闭阅读器后，旧请求的迟到结果 / 错误不再改变当前状态。ACP 请求独立管理取消与监听器，并发固定卡片不复用正在使用的 provider session。旧版 / CLI 写入的 `kind: translate` 文件仍按原有入口读取和删除，不批量改写历史数据。
+- PDF **全文翻译**（工具栏 Languages，在视觉批注旁）：
+  - 依赖版面分析 + PDF 文字层；翻译 `text` / `abstract` / `header` / `figure_title`（图题·表题）区域（score ≥ 30%）。
+  - **不翻译**：算法框及其内部文字；`reference` / `reference_content` 文献条目；“References / Bibliography / 参考文献” 标题；侧栏 `aside_text`。
+  - **译前归一化**（`normalizeLayoutSourceText`）：文字层是空白折叠后的单行串，先合并行末连字符断词（`repre- sentation` → `representation`，`pre- and` 这类并列保留）、展开 ligature / 去 soft hyphen、清掉落在正文 bbox 里的 arXiv 戳与会议 boilerplate、剥掉句末后粘着的页码与续段前的行号（`Table 2` 这类交叉引用不动，`header` 不做数字剥离）。
+  - **跨页/跨栏段落合并**（#340）：一个段落被分栏、分页或图表切开时是多个 region。末尾无句末标点、下一片段以小写开头则判为续段，拼成一个 chain 作为**原子翻译单元**（≤ 4 片段 / 4000 字符），译文再按各片段原文长度加权、在句末→分句→空白边界切回各自 bbox。图题不打断 chain，`header` 打断。chain 内任一片段缺译文即整条重译。
+  - **段落边界与安全扩框**：文字层会按真实行间距将被模型合并的相邻正文段落拆成独立 bbox。标题和图表 caption 的译文估算行宽超过原文 10% 时，覆盖层才会向无检测内容的右侧或下侧留白扩展（最多原框的 1.5× 宽或 1.75× 高）；遇到任何版面检测框即停止，扩展失败才走行距/字号拟合。正文不借用周围空间，避免不完整的版面检测遮住邻栏内容。
+  - **占位符保护**（`src/lib/translate/mask.ts`）：行内公式 / LaTeX 命令 / URL / DOI 先换成 `⟦n⟧` 再发引擎，回填时还原；引擎吞掉占位符则该 chain 用原文重译一次。
+  - 按阅读顺序把 chain **分批**翻译（`buildTranslateBatches`）：批内 payload ≤ 4500 字符（约一页双栏正文），用 `[[n]]` 编号拼成一次请求，让引擎看到上下文；译文按 `[[n]]` 标记切回、逐块写回原 bbox 位置。标记解析不一致时该批**回退为逐段翻译**，保证不丢块。并发 2（Agent 串行）；**每批完成立刻**在 bbox 上盖译文层（非整页等齐）。这里的并发 2 是**前端批次**并发，与内置 provider 在 Host 内对单批做的段级 fan-out（并发 3）正交：选内置时同时在飞的请求最多 2 × 3。
+  - 每页纸张右上角外侧常驻窄页签可只翻译本页；页签 hover 不弹出额外文字；本页已有可见译文时，页签切换为隐藏本页译文。隐藏只影响当前 UI 覆盖层，不删除磁盘缓存。
+  - 译文按论文写入 `{paper}/source/layout-translate.json`。缓存命中需匹配 provider / 源语言 / 目标语言 / 非密钥服务配置，并逐块校验 region id + 原文（存的是归一化后的原文，归一化规则变化时旧缓存会 miss 一次并重译）；版面或目标语言变化时只复用仍匹配的块。
+  - 单页翻译写缓存时按同一 cache key 增量合并，避免只翻译一页时覆盖其它页已经落盘的译文。
+  - 运行中再点=停止；有译文再点=清除。实现：`layout-translate.ts` + `layout-translate-source.ts` + `layout-translate-overlay.tsx`。
+  - 覆盖层按当前 PDF 页面背景 tone 绘制纸面底色（深字）；暗色下套用与页面栅格相同的 invert filter（`PDF_PAGE_RASTER_DARK_CLASS`），使盖住原文的底色与反转后的纸面一致。排版先以原文尺度估算、再用真实浏览器度量校验：译文膨胀时依次收紧行距（1.25 → 1.10）、缩小字号；遵循严格 CJK 断行，只有不可断的 URL/标识符仍溢出时才允许词内断行。因此普通段落不会过早缩成极小字，并尽量避免裁掉译文。
+  - **双栏翻译**（Settings → 翻译 →「在侧窗中打开渲染好的翻译」）：全文翻译按钮在原文右侧打开只读译文 PDF 面板（同页栈 + 译文覆盖层，隐藏工具栏/选区菜单）。左右各是独立 EmbedPDF 实例，通过模块级 peer 注册表（`src/lib/pdf/scroll-sync.ts` + `usePdfScrollSync`）双向同步**滚动比例**与**缩放**（scroll 事件按动画帧合并）；任一侧滚轮滚动或 Ctrl/Cmd+滚轮缩放，另一侧跟到同一相对位置。译文面板走精简 `PdfTranslationViewerInner`：只挂 raster/tiling/zoom 等核心插件（不挂 ONNX 版面分析、批注、搜索、选区，也不调用对应 capability hooks），页面层只渲染纸面 + 译文覆盖；打开时优先读 `layout-translate.json` 缓存，避免与源面板抢跑第二套翻译/版面任务。
+- API：`runTranslate(task)`（`src/lib/translate/`）。
+
+## Prompt
+
+`buildTranslatePrompt`（Agent 路径）与 Host `openai_translate_prompt`（OpenAI-compatible 路径）共用同一套约束，改一处要同步另一处：
+
+- 定位为学术论文译者；要求**按意思重组语序**（可拆长句），而不是逐词直译。
+- 公式 / 符号 / 变量 / 单位 / 行内代码 / URL / 引用标记 / 图表公式编号 / `⟦n⟧` 占位符原样保留。
+- 术语用领域惯用译法并保持一致，首次出现补原文，如 `注意力机制（attention）`。
+- 不增删、不解释、不加译注和 markdown 围栏；只输出译文。
+- 批量 payload 额外要求保留 `[[n]]` 标记、顺序与段数，不合并段落。
+- OpenAI-compatible 的 `temperature` 用 0.2（0.0 的直译感太强）。
+
+**内置 provider（`builtin`）不适用以上整套约束**：`tencent/Hunyuan-MT-7B` 是专用 MT 模型而非 instruct 模型，只认它自己的单行模板，Host 改发单条 user message（无 system message），并且**不把 `[[n]]` 喂给模型**——批量对齐依赖指令遵循，对它无效，所以标记由 Host 拆分、逐段请求、按序重组。`⟦n⟧` 占位符仍由前端 `mask.ts` 插入并原样透传。详见 [../backend/builtin-provider.md](../backend/builtin-provider.md) §翻译：Hunyuan-MT。
+
+## 路径
+
+| 类型 | 路径 |
+|---|---|
+| 内置 provider | Host `translate_text`（`builtin` → Hunyuan-MT，构建期凭证，无凭证卡片） |
+| 免费 MT | Host `translate_text`（腾讯交互翻译 / 火山 Web / DeepLX / Google gtx） |
+| 商用 BYOK | Host `translate_text`（DeepL / Azure / Google Cloud / OpenAI-compatible） |
+| Agent | `agent_run_once` + 翻译 prompt；同一篇文献的多次翻译复用同一个 ACP provider session |
+
+划词翻译只有明确「转为备注」才写入 `marks/annotations.json`；全文翻译缓存独立保存在 `source/`。Host 细节：[../backend/translate.md](../backend/translate.md)。

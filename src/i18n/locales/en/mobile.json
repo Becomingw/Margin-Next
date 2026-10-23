@@ -1,0 +1,82 @@
+{
+	"tabs": {
+		"navigation": "Main navigation",
+		"library": "Library",
+		"agent": "Edda",
+		"settings": "Settings"
+	},
+	"connect": {
+		"title": "Connect a desktop",
+		"paste": "Paste pairing link",
+		"placeholder": "edda://pair#offer=…",
+		"action": "Connect",
+		"connecting": "Connecting…",
+		"camera": "Scan QR code",
+		"manual": "Enter pairing link",
+		"cancel": "Cancel",
+		"cameraHint": "Point the camera at the pairing code on your computer.",
+		"cameraUnavailable": "Camera access is unavailable. Paste the pairing link instead.",
+		"offline": "Desktop offline",
+		"pending": "Confirm the code on your desktop",
+		"code": "Confirmation code",
+		"progress": {
+			"relayConnecting": "Connecting to relay…",
+			"e2eeHandshake": "Securing the connection…",
+			"pairing": "Requesting pairing…",
+			"authenticating": "Signing in to the desktop…",
+			"connected": "Connected"
+		}
+	},
+	"library": {
+		"title": "Library",
+		"search": "Search papers",
+		"loading": "Loading papers…",
+		"empty": "No papers"
+	},
+	"reader": {
+		"title": "Notes",
+		"back": "Back to library",
+		"pdf": "PDF",
+		"notes": "Notes",
+		"loadingPdf": "Loading PDF…",
+		"pdfUnavailable": "This paper has no PDF available on the desktop.",
+		"empty": "Choose a paper",
+		"save": "Save notes",
+		"saving": "Saving…"
+	},
+	"agent": {
+		"title": "Edda",
+		"placeholder": "Ask about your research",
+		"send": "Send",
+		"empty": "Start a conversation",
+		"thinking": "Connecting the dots…",
+		"starting": "Edda is opening the research notebook…",
+		"waitingModel": "Giving the thought a moment to bloom…",
+		"reconnecting": "Reconnecting the thread…",
+		"failed": "Edda could not complete this request on the desktop.",
+		"switchBackend": "Switch Edda's backend",
+		"defaultBackend": "Default backend",
+		"history": "Sessions",
+		"historyEmpty": "No past sessions",
+		"historyUnsupported": "This backend does not expose past sessions.",
+		"restoring": "Restoring session…"
+	},
+	"settings": {
+		"title": "Connection",
+		"menu": "Open menu",
+		"closeMenu": "Close menu",
+		"connected": "Connected",
+		"offline": "Offline",
+		"addDesktop": "Connect another desktop",
+		"addDevice": "Add device",
+		"disconnect": "Disconnect",
+		"computer": "Computer",
+		"vault": "Vault",
+		"vaults": "Vaults"
+	},
+	"errors": {
+		"load": "Could not load remote data",
+		"connect": "Could not connect",
+		"networkPermission": "iOS is blocking network access for Edda. Open Settings > Edda and allow Wireless Data (WLAN & Cellular), then try again."
+	}
+}

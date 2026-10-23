@@ -1,0 +1,123 @@
+{
+	"tree": {
+		"openCount_one": "{{count}} open comment",
+		"openCount_other": "{{count}} open comments"
+	},
+	"import": {
+		"success_one": "Imported {{count}} manuscript for review",
+		"success_other": "Imported {{count}} manuscripts for review"
+	},
+	"toolbar": {
+		"viewManuscript": "Manuscript",
+		"viewSplit": "Split",
+		"viewPdf": "PDF",
+		"parsingPdf": "Parsing PDF…",
+		"reparsePdf": "Re-parse PDF to Markdown",
+		"trackChanges": "Track Changes",
+		"trackChangesHint": "Edits are always tracked; this only changes how revisions appear",
+		"showMarkup": "Show revisions",
+		"showClean": "Final text",
+		"showOriginal": "Original text",
+		"originalHint": "Read-only · comparison baseline for this round",
+		"newComment": "New Comment",
+		"prevItem": "Previous revision",
+		"nextItem": "Next revision",
+		"acceptChange": "Accept revision",
+		"acceptAll": "Accept all revisions",
+		"rejectChange": "Reject revision",
+		"rejectAll": "Reject all revisions",
+		"agentChange": "AI revision",
+		"showAgentNews": "Jump to the first new AI comment or edit",
+		"prevAgent": "Previous AI edit or comment",
+		"nextAgent": "Next AI edit or comment",
+		"prevComment": "Previous open comment",
+		"nextComment": "Next open comment",
+		"newAgentComments_one": "{{count}} new AI comment",
+		"newAgentComments_other": "{{count}} new AI comments",
+		"newAgentEdits_one": "{{count}} new AI edit",
+		"newAgentEdits_other": "{{count}} new AI edits",
+		"agentChangeBy": "Revision by {{name}}",
+		"authorChange": "Author revision",
+		"agentMenu": "Agents in this review",
+		"allAgents": "All Agents",
+		"unnamedAgent": "AI (unnamed)",
+		"agentCounts": "{{changes}} edits · {{comments}} comments"
+	},
+	"filter": {
+		"open": "Show only open comments",
+		"all": "Show all comments"
+	},
+	"empty": {
+		"open": "Select text to add a comment, or edit to record a change."
+	},
+	"export": {
+		"button": "Export",
+		"done": "Review exported to"
+	},
+	"selection": {
+		"comment": "Comment on selection",
+		"cite": "Cite",
+		"singleBlock": "Select text in the manuscript first to add a comment."
+	},
+	"citation": {
+		"search": "Search the library…",
+		"empty": "No papers match."
+	},
+	"composer": {
+		"placeholder": "Write a comment…",
+		"submit": "Comment",
+		"cancel": "Cancel"
+	},
+	"pdf": {
+		"page": "Page {{page}}"
+	},
+	"card": {
+		"agent": "AI",
+		"author": "Author",
+		"outdated": "Outdated · quote removed",
+		"editedByAgent": "Edited by AI",
+		"editedByAuthor": "Edited by author",
+		"reply": "Reply",
+		"replyPlaceholder": "Reply…",
+		"resolve": "Mark resolved",
+		"reopen": "Reopen",
+		"delete": "Delete",
+		"restore": "Restore",
+		"editReply": "Edit reply",
+		"deleteReply": "Delete reply",
+		"replyEdited": "edited",
+		"replyCount_one": "{{count}} reply",
+		"replyCount_other": "{{count}} replies"
+	},
+	"column": {
+		"title": "Review",
+		"openCount_one": "{{count}} open",
+		"openCount_other": "{{count}} open",
+		"comments": "Comments",
+		"changes": "Changes",
+		"filterOpen": "Open",
+		"filterAll": "All",
+		"empty": "Select text in the manuscript to leave a comment.",
+		"needsRelocation": "Needs relocation",
+		"export": "Export review",
+		"hide": "Hide review column",
+		"toggle": "Show comments",
+		"unplaced_one": "{{count}} not in text",
+		"unplaced_other": "{{count}} not in text",
+		"unplacedHint": "Comments on PDF pages, or whose quoted text was removed or cannot be located"
+	},
+	"changes": {
+		"accept": "Accept",
+		"reject": "Reject",
+		"count_one": "{{count}} revision",
+		"count_other": "{{count}} revisions",
+		"inserted": "Inserted",
+		"deleted": "Deleted",
+		"replaced": "Replaced",
+		"loading": "Loading changes…",
+		"since": "Since {{time}}",
+		"reasonPlaceholder": "Round note (optional)",
+		"finishRound": "Finish round",
+		"empty": "No changes since the last round."
+	}
+}
