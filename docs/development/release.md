@@ -17,7 +17,7 @@
    ```
 
    使用 `cargo metadata` 的 `target_directory` 定位 `release/bundle/nsis/`。
-   `mainBinaryName` 必须显式为 `margin`（Cargo 包名为 `margin-desktop`）；
+   `mainBinaryName` 与 Cargo `default-run` 必须显式为 `margin`（包名为 `margin-desktop`）；
    默认构建只有 `margin.exe`，release 禁止 `legacy-workbench`。
    此本地发布流程不依赖上游安装器工作流成功；须记录本地验证结果并检查 Margin CI。
 
@@ -30,12 +30,15 @@
 - 不注册旧工作台的 Explorer 菜单、深链或更新通道，不编入旧 provider 密钥。
 - 安装包应包含 PDFium DLL 及其原始许可证 / 依赖 notices、MIT LICENSE / NOTICE、
   `skills/margin-mcp-reviewer/`；Skill 是可选指引，不是内置模型或后台 Agent。
+- 默认依赖树不含 Tesseract / Leptonica；只支持 PDF 文字层提取，扫描件应明确报告
+  `pdf_needs_ocr` 而不崩溃或覆盖正文。不承诺随包 OCR 或后台模型下载。
 - 用临时目录安装并启动已安装的 release 程序；检查资源、原生图标、窗口、
   正文保存、MCP 授权 / 提案 / 撤销与 CSP，不用开发服务器代替安装包验收。
   在专用测试进程启用 WebView2 CDP（见 `docs/margin.md`，不得用于日常运行），
-  运行 `pnpm test:margin-release`，验证生产资源、编辑器自动保存、真实 MCP、
-  撤销、旧 IPC 隔离以及随包 PDFium 子进程解析。烟测只替换文件夹选择器，
-  不替换业务服务；使用自动清理的虚构临时稿件，不连接个人工作区。
+  设置 `MARGIN_TEST_PID` 为专用安装测试进程的 PID，运行 `pnpm test:margin-release`，
+  验证生产资源、编辑器自动保存、真实 MCP、撤销、旧 IPC 隔离以及随包 PDFium 子进程解析。
+  烟测驱动该进程的真实原生文件夹选择器，不替换 IPC 或业务服务；
+  使用自动清理的虚构临时稿件，不连接个人工作区。
 - 保留 Windows 11 原生标题区、真实跨屏 DPI、复杂 PDF / 长稿件等未验收限制。
 
 ## 上传与人工门禁

@@ -1,5 +1,6 @@
 [package]
 name = "margin-desktop"
+default-run = "margin"
 version = "0.1.0-beta.1"
 description = "Local-first manuscript review with human-controlled AI proposals"
 authors = ["Becomingw"]
