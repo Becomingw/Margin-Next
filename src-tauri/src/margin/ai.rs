@@ -1,7 +1,7 @@
 //! One explicit, revocable capability for one manuscript and reviewer role.
 //! No Vault/MCP controller from the research workbench is started.
 mod tools;
-use edda_core::{error::AppError, features::margin as service};
+use margin_core::{error::AppError, features::margin as service};
 use rmcp::transport::streamable_http_server::{
     session::local::LocalSessionManager, StreamableHttpServerConfig, StreamableHttpService,
 };

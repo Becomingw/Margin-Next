@@ -53,8 +53,8 @@ async fn margin_open_workspace(
     ai: tauri::State<'_, ai::Controller>,
     path: String,
 ) -> Result<String, String> {
-    let root = edda_core::fs::resolve_vault(&path)
-        .and_then(|p| std::fs::canonicalize(p).map_err(edda_core::error::AppError::from))
+    let root = margin_core::fs::resolve_vault(&path)
+        .and_then(|p| std::fs::canonicalize(p).map_err(margin_core::error::AppError::from))
         .map_err(|e| e.to_string())?;
     ai.stop().await?;
     app.fs_scope()
@@ -90,7 +90,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             margin_open_workspace,
             margin_frame_theme,
-            crate::features::pdf::export::commands::export_system_cjk_font,
+            crate::fonts::commands::export_system_cjk_font,
             margin_create,
             margin_import,
             margin_parse_pdf,

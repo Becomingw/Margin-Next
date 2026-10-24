@@ -99,14 +99,14 @@ Tauri 2 · React 19 · TypeScript · Plate · Rust · SQLite.
 pnpm typecheck
 pnpm test
 pnpm build
-cargo test -p edda-core features::margin --lib
-cargo test -p edda margin::ai::tests --lib
+cargo test -p margin-core features::margin --lib
+cargo test -p margin-desktop margin::ai::tests --lib
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
 `pnpm test:margin-native` drives a visible Windows development window over CDP; setup is documented in [running and validation](docs/margin.md#运行与验证). It exercises real HTTP MCP / SQLite reads, signed replies, idempotent retries, dirty-draft isolation, stale proposals, human decisions and revocation. Protocol calls simulate an AI client; they do not validate an actual model's output quality.
 
-Entry points: `src/margin/` (standalone frontend), `src-tauri/src/margin/` (Host / MCP), and `crates/edda-core/src/features/margin/` (transactional core). Inherited Edda plans in the [development index](docs/development/index.md) are not automatically Margin's roadmap.
+Entry points: `src/margin/` (standalone frontend), `src-tauri/src/margin/` (Host / MCP), and `crates/margin-core/src/features/margin/` (transactional core). The default Host does not compile the old workbench; `legacy-workbench` is for source compatibility checks and is forbidden in release builds. Inherited plans in the [development index](docs/development/index.md) are not automatically Margin's roadmap.
 
 ## Origins and license
 

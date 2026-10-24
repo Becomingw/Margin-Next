@@ -1,5 +1,5 @@
 [workspace]
-members = ["src-tauri", "crates/edda-core"]
+members = ["src-tauri", "crates/margin-core"]
 resolver = "2"
 
 # Shared dependencies for the desktop host and reusable business services.

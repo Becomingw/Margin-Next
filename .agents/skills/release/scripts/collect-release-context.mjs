@@ -50,6 +50,9 @@ function resolveRepository(warnings) {
 	if (process.env.GITHUB_REPOSITORY) {
 		return process.env.GITHUB_REPOSITORY;
 	}
+	// An inherited upstream remote must never win over this project's origin.
+	const fromRemote = repositoryFromRemote();
+	if (fromRemote) return fromRemote;
 
 	const fromGh = run(
 		"gh",
@@ -60,7 +63,6 @@ function resolveRepository(warnings) {
 		return fromGh;
 	}
 
-	const fromRemote = repositoryFromRemote();
 	if (!fromRemote) {
 		warnings.push(
 			"Could not resolve the GitHub repository; PR metadata and web links are unavailable.",

@@ -1,11 +1,11 @@
 [package]
-name = "edda-core"
-# Keep in lockstep with the desktop `edda` version: `core::http`
+name = "margin-core"
+# Keep in lockstep with the desktop version: `core::http`
 # bakes `CARGO_PKG_VERSION` into the product User-Agent string.
 version = "0.19.0"
 edition = "2021"
-description = "Tauri-independent foundations of Edda (errors, fs, http, paths, sqlite, usage log)"
-authors = ["you"]
+description = "Transactional manuscript review services for Margin"
+authors = ["Becomingw"]
 license = "MIT"
 publish = false
 
@@ -56,7 +56,7 @@ uuid = { version = "1", features = ["v4"] }
 
 # LiteParse relies on a desktop PDFium binary. Mobile (iOS/Android) uses the
 # paired desktop Host for PDF parsing instead of packaging PDFium in the app.
-# Keep in lockstep with the `edda` crate's target gate.
+# Keep in lockstep with the desktop crate's target gate.
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
 liteparse = "2.13"
 # The PDFium binding liteparse itself sits on (shared dylib, one global loader).
@@ -65,6 +65,6 @@ liteparse = "2.13"
 liteparse-pdfium = "1.7"
 
 # `http::system_proxy_url` reads the WinINET proxy config (HKCU) on Windows;
-# target deps do not transfer from the `edda` crate, so declare it here too.
+# target deps do not transfer from the desktop crate, so declare it here too.
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"

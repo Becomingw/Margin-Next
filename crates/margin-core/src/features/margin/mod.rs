@@ -1,4 +1,4 @@
-//! Margin's transactional document service. No live manuscript file or Edda
+//! Margin's transactional document service. No live manuscript file or research
 //! catalog: immutable revisions, version-bound proposals, decisions and threads.
 mod agent;
 mod operations;

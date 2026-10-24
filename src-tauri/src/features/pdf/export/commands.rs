@@ -8,7 +8,7 @@ use super::{load_system_cjk_font, ExportFontPayload};
 /// Async + `run_blocking`: reading a multi-megabyte font file must not run on
 /// the main thread (Windows UI message pump).
 #[tauri::command]
-#[specta::specta]
+#[cfg_attr(feature = "legacy-workbench", specta::specta)]
 pub async fn export_system_cjk_font() -> ApiResult<ExportFontPayload> {
     run_blocking(|| match load_system_cjk_font() {
         Ok(payload) => ApiResult::ok(payload),

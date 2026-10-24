@@ -155,7 +155,7 @@
 		},
 		"export": {
 			"watermark": {
-				"label": "Edda watermark by default"
+				"label": "Margin watermark by default"
 			}
 		},
 		"privacy": {

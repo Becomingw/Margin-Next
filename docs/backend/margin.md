@@ -1,6 +1,6 @@
 # Margin 事务文档后端
 
-独立 Margin 使用 `crates/edda-core/src/features/margin/`，桌面壳为
+独立 Margin 使用 `crates/margin-core/src/features/margin/`，桌面壳为
 `src-tauri/src/margin/commands.rs`。上游 Edda 的 `features/review/` 文件型服务仍保留，
 但不再注册到 Margin 的运行时。前端通过 `src/lib/review/api.ts` 注入适配器，
 不要求 Plate 知道数据库布局。
@@ -102,7 +102,7 @@ Word 式行内增删、批注、回复和单处接受 / 拒绝保留，修改装
 
 ## 验证与边界
 
-`cargo test -p edda-core features::margin` 覆盖并发写入、旧版本拒绝、不可变快照、
+`cargo test -p margin-core features::margin` 覆盖并发写入、旧版本拒绝、不可变快照、
 回执幂等、稳定 suggestion、提案隔离、线程 CAS、Unicode、空文本、迁入 / 导出 / 恢复。
 子进程测试在未提交事务内直接退出、不运行析构，然后重开库验证回滚与 integrity。
 `pnpm test:margin-native` 使用真实 WebView2 + SQLite 跑保存、模式 / 草稿保护、逐处及批量裁决、

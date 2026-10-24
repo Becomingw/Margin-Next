@@ -155,7 +155,7 @@
 		},
 		"export": {
 			"watermark": {
-				"label": "默认添加 Edda 水印"
+				"label": "默认添加 Margin 水印"
 			}
 		},
 		"privacy": {

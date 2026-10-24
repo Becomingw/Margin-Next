@@ -39,10 +39,8 @@ jobs:
               console.error('Desktop packages expose business operations through MCP, without sidecars');
               process.exit(1);
             }
-            for (const platform of ['ios', 'android']) {
-              const mobile = require('./src-tauri/tauri.' + platform + '.conf.json');
-              if (mobile.bundle.externalBin?.length) throw new Error('Mobile must not bundle desktop sidecars');
-            }
+            if (conf.bundle.windows?.nsis?.installerHooks) throw new Error('Do not register inherited workbench Explorer hooks');
+            if (JSON.stringify(conf.app.security.capabilities) !== JSON.stringify(['default'])) throw new Error('Only the Margin window capability is allowed');
           "
       - name: Run TypeScript checks
         run: |
@@ -73,7 +71,7 @@ jobs:
       matrix:
         task:
           - quality
-          - edda-tests
+          - host-tests
           - core-tests
     steps:
       - uses: actions/checkout@v5
@@ -118,11 +116,11 @@ jobs:
               cargo fmt --all --check
               cargo clippy --workspace --all-targets -- -D warnings
               ;;
-            edda-tests)
-              cargo test -p edda
+            host-tests)
+              cargo test -p margin-desktop
               ;;
             core-tests)
-              cargo test -p edda-core
+              cargo test -p margin-core
               ;;
             *)
               echo "::error::Unknown Rust CI task: ${{ matrix.task }}"

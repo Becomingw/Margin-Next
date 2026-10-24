@@ -1,29 +1,25 @@
-//! Edda Host library (`edda_lib`).
-//!
-//! - [`run`] — Tauri app entry (desktop / mobile).
-//! - [`core`] / [`features`] — bridge the tauri-free `edda-core` crate
-//!   (which the headless CLI consumes directly) and keep the desktop shells
-//!   (`#[tauri::command]` surfaces, JobCenter, watcher, integrations).
-//!
-//! Assembly lives in [`app`]; domain logic in [`features`].
+//! Margin desktop Host. Default builds assemble only the manuscript workspace
+//! and review-only MCP. Retained workbench source is an explicit opt-in, never
+//! an additional startup path in release artifacts.
 
-#[cfg(feature = "desktop")]
+#[cfg(feature = "legacy-workbench")]
+extern crate margin_core as edda_core;
+#[cfg(feature = "legacy-workbench")]
 mod app;
 /// Cross-cutting foundations (error, fs, paths, logging helpers).
 pub mod core;
-/// Domain features (Vault / Catalog / Import / Wiki / …).
-/// Service bodies live in `edda_core::features::*`; this crate keeps the
-/// desktop-only shells. `features::agent` (BYOA) is desktop-only.
+/// Retained research-workbench command shells; excluded from normal builds.
+#[cfg(feature = "legacy-workbench")]
 pub mod features;
-/// External integrations (bridge, MCP, remote vault, cloud sync).
-/// Desktop-only; CLI must not depend on these.
+#[cfg(all(feature = "desktop", not(feature = "legacy-workbench")))]
+#[path = "features/pdf/export/mod.rs"]
+pub mod fonts;
+/// Retained integrations; not Margin's review-only MCP server.
+#[cfg(feature = "legacy-workbench")]
 pub mod integration;
-#[cfg(feature = "desktop")]
+#[cfg(all(feature = "desktop", not(feature = "legacy-workbench")))]
 mod margin;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "legacy-workbench")]
+pub use app::run;
+#[cfg(all(feature = "desktop", not(feature = "legacy-workbench")))]
 pub use margin::run;
-// Retain the upstream assembly as an explicit library compatibility entry
-// while shared features are extracted. The Margin binary never calls it.
-#[cfg(feature = "desktop")]
-#[doc(hidden)]
-pub use app::run as run_edda_workbench;

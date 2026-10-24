@@ -2,8 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    if let Some(status) = edda_lib::features::paper::import::pdf_parse::try_run_pdf_parse_worker() {
+    if let Some(status) = margin_core::features::pdf_parse::try_run_pdf_parse_worker() {
         std::process::exit(status);
     }
-    edda_lib::run()
+    margin_lib::run()
 }

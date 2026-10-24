@@ -193,7 +193,7 @@ export type AppSettings = {
 	 */
 	batchImportConcurrency: number;
 	/**
-	 * Prefill the Markdown export dialog's "Edda watermark" checkbox.
+	 * Prefill the Markdown export dialog's watermark checkbox.
 	 * Default **off**; per-export choice can still override.
 	 */
 	exportWatermarkEnabled: boolean;

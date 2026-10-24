@@ -87,7 +87,7 @@ pnpm install --frozen-lockfile
 pnpm typecheck
 pnpm test
 pnpm build
-cargo test -p edda-core features::margin
+cargo test -p margin-core features::margin
 pnpm tauri dev
 ```
 
@@ -114,7 +114,10 @@ pnpm test:margin-native
 本次后端检查点：Vitest 1437 项通过、5 项跳过；Margin Rust 14 项通过（中断测试实际启动子进程），
 保留的 Edda review 44 项通过；类型 / 生产构建、全 workspace Clippy `-D warnings` 与真实 WebView2 烟测通过。
 前端 lint 通过，保留上游已有的 7 条 warning 和 1 条 info。
-上游装配暂作为隐藏的库兼容入口 `run_edda_workbench` 保留，Margin 二进制不调用它；
+Host 包与库已改名为 `margin-desktop` / `margin_lib`，共享核心移到 `crates/margin-core`。
+默认构建不编译旧 `app` / `features` / `integration` 装配、ACP、更新器或旧 MCP；
+源码兼容检查需要显式启用 `legacy-workbench`，该 feature 被 release 构建拒绝。
+不再继承旧工作台的 updater 权限、Explorer 注册表钩子，或把其内置服务凭证编入 Margin。
 生产前端仍有大 chunk 警告，留待依赖裁剪，不以改阈值隐藏。
 
 ## 后续范围（不是已实现能力）

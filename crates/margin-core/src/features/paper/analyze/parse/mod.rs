@@ -43,13 +43,13 @@ pub struct BodyParseAsset {
 /// keys off this to avoid reporting cancelled work as broken.
 pub const CANCELLED_MESSAGE: &str = "background task cancelled";
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-const PDF_PARSE_WORKER_ARG: &str = "--edda-internal-pdf-parse-worker";
+const PDF_PARSE_WORKER_ARG: &str = "--margin-internal-pdf-parse-worker";
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-const PDF_PROBE_WORKER_ARG: &str = "--edda-internal-pdf-recognize-worker";
+const PDF_PROBE_WORKER_ARG: &str = "--margin-internal-pdf-recognize-worker";
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-const PDF_RENDER_WORKER_ARG: &str = "--edda-internal-pdf-render-worker";
+const PDF_RENDER_WORKER_ARG: &str = "--margin-internal-pdf-render-worker";
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
-const PDF_LOCATE_WORKER_ARG: &str = "--edda-internal-pdf-locate-worker";
+const PDF_LOCATE_WORKER_ARG: &str = "--margin-internal-pdf-locate-worker";
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
 const PDF_PARSE_TIMEOUT: Duration = Duration::from_secs(120);
 #[cfg(not(any(target_os = "ios", target_os = "android")))]
@@ -593,8 +593,8 @@ fn bundled_pdfium_dir() -> Option<PathBuf> {
     }
     candidates.push(exe_dir.join("pdfium"));
     // deb / AppImage put bundle resources under /usr/lib/<product>/.
-    candidates.push(exe_dir.join("../lib/edda/pdfium"));
-    candidates.push(exe_dir.join("../lib/Edda/pdfium"));
+    candidates.push(exe_dir.join("../lib/margin/pdfium"));
+    candidates.push(exe_dir.join("../lib/Margin/pdfium"));
     candidates.push(exe_dir.to_path_buf());
 
     let name = pdfium_lib_name();
@@ -679,7 +679,7 @@ async fn spawn_pdf_worker_with_dir(
     let executable = std::env::current_exe()
         .map_err(|error| AppError::message(format!("resolve PDF parse worker: {error}")))?;
     let worker_dir = std::env::temp_dir().join(format!(
-        "edda-pdf-parse-{}-{}",
+        "margin-pdf-parse-{}-{}",
         std::process::id(),
         uuid::Uuid::new_v4().simple()
     ));

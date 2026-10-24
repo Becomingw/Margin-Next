@@ -3,6 +3,11 @@ use std::fs;
 use std::path::PathBuf;
 
 fn main() {
+    if env::var("PROFILE").as_deref() == Ok("release")
+        && env::var_os("CARGO_FEATURE_LEGACY_WORKBENCH").is_some()
+    {
+        panic!("Margin release builds must not enable legacy-workbench");
+    }
     // Unit-test binaries link the full Tauri stack, which statically imports
     // `TaskDialogIndirect` — exported only by comctl32 v6. tauri-build's
     // manifest resource reaches bin targets only (`rustc-link-arg-bins`), so
@@ -27,7 +32,10 @@ fn main() {
         println!("cargo:rerun-if-changed=icons/icon.ico");
         tauri_build::build();
     }
-    forward_build_env();
+    // Margin never embeds the former workbench's hosted-provider credentials.
+    if env::var_os("CARGO_FEATURE_LEGACY_WORKBENCH").is_some() {
+        forward_build_env();
+    }
 }
 
 /// Variables baked into the binary at compile time and read via `option_env!`.

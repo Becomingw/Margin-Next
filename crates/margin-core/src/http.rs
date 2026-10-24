@@ -11,9 +11,9 @@ use std::time::{Duration, Instant};
 /// The repo + mailto contacts keep Crossref / Semantic Scholar requests in
 /// their polite pools.
 pub const USER_AGENT: &str = concat!(
-    "Edda/",
+    "Margin/",
     env!("CARGO_PKG_VERSION"),
-    " (+https://github.com/Becomingw/Edda; mailto:edda@users.noreply.github.com)"
+    " (+https://github.com/Becomingw/Margin-Next)"
 );
 
 /// Browser-like UA for endpoints that reject non-browser agents with HTTP 403
@@ -241,7 +241,7 @@ pub fn client_builder() -> reqwest::ClientBuilder {
         Some(url) => match reqwest::Proxy::all(&url) {
             Ok(proxy) => builder.proxy(proxy),
             Err(error) => {
-                log::error!(target: "edda::network", "invalid configured proxy: {error}");
+                log::error!(target: "margin::network", "invalid configured proxy: {error}");
                 builder
             }
         },

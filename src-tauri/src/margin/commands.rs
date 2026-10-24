@@ -4,7 +4,7 @@ use crate::core::{
     blocking::run_blocking,
     error::{map_err, ApiResult},
 };
-use edda_core::{
+use margin_core::{
     error::AppError,
     features::{
         margin as service,
@@ -13,6 +13,13 @@ use edda_core::{
 };
 use serde_json::Value;
 use std::path::{Path, PathBuf};
+
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarginDiffResult {
+    pub hunks: Vec<margin_core::features::review::DiffHunk>,
+    pub baseline_at: String,
+}
 
 fn root(roots: &MarginRoots, path: &str) -> Result<PathBuf, AppError> {
     let root = std::fs::canonicalize(Path::new(path))?;
@@ -182,15 +189,15 @@ pub async fn margin_diff(
     roots: tauri::State<'_, MarginRoots>,
     vault_path: String,
     review_id: String,
-) -> Result<ApiResult<crate::features::review::commands::ReviewDiffResult>, String> {
+) -> Result<ApiResult<MarginDiffResult>, String> {
     let root = root(&roots, &vault_path);
     Ok(run_blocking(move || {
-        api(root.and_then(|r| service::open(&r, &review_id)).map(|v| {
-            crate::features::review::commands::ReviewDiffResult {
+        api(root
+            .and_then(|r| service::open(&r, &review_id))
+            .map(|v| MarginDiffResult {
                 hunks: diff_lines(&v.state.baseline_text, &v.manuscript),
                 baseline_at: v.state.created_at,
-            }
-        }))
+            }))
     })
     .await)
 }
@@ -232,7 +239,7 @@ pub async fn margin_parse_pdf(
     };
     let dir = root.join(".margin").join("documents").join(&review_id);
     // Parser writes a derived artifact only, never a live manuscript.
-    let result = edda_core::features::paper::analyze::parse::parse_pdf_to_dir(
+    let result = margin_core::features::paper::analyze::parse::parse_pdf_to_dir(
         &dir.join(pdf),
         &dir,
         "parsed.md",
@@ -247,7 +254,7 @@ pub async fn margin_parse_pdf(
         api(service::execute(
             &root,
             &review_id,
-            &edda_core::features::review::model::new_id("parse"),
+            &margin_core::features::review::model::new_id("parse"),
             serde_json::json!({"kind":"parsed-pdf","expectedStamp":view.stamp,"markdown":markdown}),
         ))
     })

@@ -1,5 +1,5 @@
 use super::Grant;
-use edda_core::{error::AppError, features::margin as service};
+use margin_core::{error::AppError, features::margin as service};
 use rmcp::{
     handler::server::{
         router::tool::ToolRouter,

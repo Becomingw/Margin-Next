@@ -25,6 +25,7 @@
       }
     ],
     "security": {
+      "capabilities": ["default"],
       "csp": null
     }
   },
@@ -69,8 +70,7 @@
     },
     "windows": {
       "nsis": {
-        "sidebarImage": "icons/nsis-sidebar.bmp",
-        "installerHooks": "nsis/hooks.nsh"
+        "sidebarImage": "icons/nsis-sidebar.bmp"
       }
     }
   }

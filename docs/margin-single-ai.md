@@ -73,12 +73,12 @@ AI 不会因为一条新批注而自行运行。本版本没有模型调用队�
 
 ## 实现与验证入口
 
-- 核心身份与归属：`crates/edda-core/src/features/margin/agent.rs`，SQLite schema 1 → 2 为增量迁移。
+- 核心身份与归属：`crates/margin-core/src/features/margin/agent.rs`，SQLite schema 1 → 2 为增量迁移。
   不自动降级数据库；若要回退旧二进制，应保留升级前的备份。
 - 专用 Host / MCP：`src-tauri/src/margin/ai.rs` 与 `ai/tools.rs`；不复用 Edda 的完整工具路由。
 - 授权与提案 UI：`src/margin/ai-dialog.tsx`；只读 / 脏草稿保护在 `ai-client.ts` 与审阅组件。
-- `cargo test -p edda-core features::margin`：身份归属、同线程人 / AI 互动、CAS、幂等、关闭线程、迁移及原事务回归。
-- `cargo test -p edda margin::ai::tests --lib`：真实 HTTP MCP 身份 / 白名单、范围固定、凭证轮换及撤销时的 in-flight 屏障。
+- `cargo test -p margin-core features::margin`：身份归属、同线程人 / AI 互动、CAS、幂等、关闭线程、迁移及原事务回归。
+- `cargo test -p margin-desktop margin::ai::tests --lib`：真实 HTTP MCP 身份 / 白名单、范围固定、凭证轮换及撤销时的 in-flight 屏障。
 - `pnpm test:margin-native`：真实 WebView2 + HTTP MCP + SQLite 闭环，包含一次故意延迟的真实保存，
   验证草稿不暴露给 AI、脏稿禁止应用、保存后旧提案失效、重新提案 / 应用 / 人工接受、共享回复和断开后无写入。
 

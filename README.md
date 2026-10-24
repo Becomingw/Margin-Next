@@ -99,14 +99,14 @@ Tauri 2 · React 19 · TypeScript · Plate · Rust · SQLite。
 pnpm typecheck
 pnpm test
 pnpm build
-cargo test -p edda-core features::margin --lib
-cargo test -p edda margin::ai::tests --lib
+cargo test -p margin-core features::margin --lib
+cargo test -p margin-desktop margin::ai::tests --lib
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
 真实 Windows 桌面回归使用 `pnpm test:margin-native`，需要可见的开发窗口和 CDP 调试端口，启动方式见 [运行与验证](docs/margin.md#运行与验证)。回归覆盖真实 HTTP MCP / SQLite 的读稿、署名回复、幂等重试、脏草稿保护、过期提案、用户裁决与授权撤销；不代表验证过实际大模型的生成质量。
 
-主要入口：`src/margin/`（独立前端）、`src-tauri/src/margin/`（Host / MCP）、`crates/edda-core/src/features/margin/`（事务核心）。[开发索引](docs/development/index.md) 中的 Edda 规划不自动纳入 Margin。
+主要入口：`src/margin/`（独立前端）、`src-tauri/src/margin/`（Host / MCP）、`crates/margin-core/src/features/margin/`（事务核心）。默认 Host 不编译旧工作台；`legacy-workbench` 只供源码兼容检查，禁止用于 release 构建。[开发索引](docs/development/index.md) 中的上游规划不自动纳入 Margin。
 
 ## 来源与许可证
 
