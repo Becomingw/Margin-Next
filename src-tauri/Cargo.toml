@@ -162,7 +162,7 @@ tauri-plugin-single-instance = { version = "2", features = ["deep-link"], option
 # Keep this cfg in sync with the gates in src/features/import/pdf_parse/mod.rs
 # — desktop (incl. Windows) needs it.
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
-liteparse = { version = "2.13", optional = true }
+liteparse = { version = "2.13", default-features = false, optional = true }
 # The PDFium binding liteparse itself sits on (shared dylib, one global loader).
 # `features/pdf_locate` uses the text engine directly for quote → page rects,
 # bypassing liteparse's layout pass.

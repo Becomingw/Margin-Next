@@ -911,10 +911,12 @@ async fn run_liteparse_markdown_direct(
     // step and is immune.
     let data = fs::read(pdf_path).map_err(|e| AppError::message(format!("read pdf: {e}")))?;
 
-    // Prefer native text; OCR is best-effort and must not abort the whole parse.
+    // Margin's preview ships native text extraction only. Inherited automatic
+    // OCR enters unvalidated native image code and can terminate the Windows
+    // worker (an access violation cannot be caught as a Rust Result). Do not
+    // initialize Tesseract or download model data implicitly during import.
     let config = LiteParseConfig {
-        ocr_enabled: true,
-        ocr_failure_fatal: false,
+        ocr_enabled: false,
         output_format: OutputFormat::Markdown,
         image_mode: ImageMode::Off,
         quiet: true,
@@ -925,27 +927,20 @@ async fn run_liteparse_markdown_direct(
 
     let parser = LiteParse::new(config);
 
-    // Complexity pre-pass for quality labeling (cheap text-layer only).
-    let needs_ocr = match parser
-        .is_complex(liteparse::types::PdfInput::Bytes(data.clone()))
-        .await
-    {
-        Ok(pages) => pages.iter().any(|p| p.needs_ocr),
-        Err(_) => false,
-    };
-
     let result = parser
         .parse_input(liteparse::types::PdfInput::Bytes(data))
         .await
         .map_err(|e| AppError::message(format!("liteparse: {e}")))?;
 
-    let (body_source, body_quality) = if needs_ocr {
-        ("ocr".to_string(), "low".to_string())
-    } else {
-        ("pdf".to_string(), "medium".to_string())
-    };
-
-    Ok((result.text, body_source, body_quality))
+    // Markdown page separators alone must not count as extracted text.
+    if result.text.trim().is_empty() || result.pages.iter().all(|page| page.text.trim().is_empty())
+    {
+        return Err(AppError::domain(
+            "pdf_needs_ocr",
+            "No extractable PDF text. This preview does not include OCR; import Markdown or a text-based PDF.",
+        ));
+    }
+    Ok((result.text, "pdf".to_string(), "medium".to_string()))
 }
 
 #[cfg(any(target_os = "ios", target_os = "android"))]

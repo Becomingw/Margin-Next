@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Exercise installed production assets, IPC/SQLite, editor and HTTP MCP.
-// Only the native folder picker is substituted with our own temporary fixture.
+// Drive the real native folder picker into our own temporary fixture directory.
 // No Vite imports or development server are used; never log grant credentials.
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -77,6 +78,28 @@ const ipc = (command, args = {}) =>
 	evaluate(
 		`window.__TAURI_INTERNALS__.invoke(${JSON.stringify(command)},${JSON.stringify(args)})`,
 	);
+const processId = Number(process.env.MARGIN_TEST_PID);
+assert.ok(
+	Number.isSafeInteger(processId) && processId > 0,
+	"Set MARGIN_TEST_PID to the dedicated installed test process",
+);
+function pickWorkspace(path, cancel = false) {
+	execFileSync(
+		"powershell.exe",
+		[
+			"-NoProfile",
+			"-NonInteractive",
+			"-ExecutionPolicy",
+			"Bypass",
+			"-File",
+			"scripts/margin-pick-workspace.ps1",
+			"-ProcessId",
+			String(processId),
+			...(cancel ? ["-Cancel"] : ["-Path", path]),
+		],
+		{ windowsHide: true, timeout: 20000 },
+	);
+}
 const tempBase =
 	process.env.LOCALAPPDATA &&
 	path.join(process.env.LOCALAPPDATA, "Temp", "opencode");
@@ -115,7 +138,9 @@ async function request(method, params, notification = false) {
 			for (const line of text
 				.split(/\r?\n/)
 				.filter((s) => s.startsWith("data:"))) {
-				const message = JSON.parse(line.slice(5));
+				const data = line.slice(5).trim();
+				if (!data) continue;
+				const message = JSON.parse(data);
 				if (message.id === id) result = message;
 			}
 		}
@@ -133,30 +158,23 @@ try {
 	await send("Log.enable");
 	await send("Page.bringToFront");
 	const csp = await evaluate(
-		`document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content`,
+		`(async()=>document.querySelector('meta[http-equiv="Content-Security-Policy"]')?.content || (await fetch(location.href)).headers.get('content-security-policy'))()`,
 	);
 	assert.ok(
 		csp?.includes("object-src 'none'") && !csp.includes("'unsafe-eval'"),
 		"Missing release CSP",
 	);
-	await evaluate(`(() => {
-		const original=window.__TAURI_INTERNALS__.invoke;
-		window.__marginSmokeRestore=()=>{window.__TAURI_INTERNALS__.invoke=original;};
-		window.__TAURI_INTERNALS__.invoke=(cmd,args,...rest)=>cmd==='plugin:dialog|open'?Promise.resolve(${JSON.stringify(root)}):original(cmd,args,...rest);
-		document.querySelector('aside button').click();
-	})()`);
+	await evaluate(`document.querySelector('aside button').click()`);
+	pickWorkspace(root);
 	await until(
-		`!!document.querySelector('aside input')`,
+		`(async()=>!document.querySelector('aside button').disabled && (await window.__TAURI_INTERNALS__.invoke('margin_list',{vaultPath:${JSON.stringify(root)}})).ok)()`,
 		"Workspace picker action failed",
-	);
-	await evaluate(
-		`window.__marginSmokeRestore(); delete window.__marginSmokeRestore;`,
 	);
 	const created = await ipc("margin_create", {
 		vaultPath: root,
 		title: "Release smoke manuscript",
 	});
-	assert.equal(created.ok, true);
+	assert.equal(created.ok, true, JSON.stringify(created));
 	reviewId = created.data.id;
 	const context = { vaultPath: root, reviewId };
 	const command = (request) =>
@@ -169,10 +187,9 @@ try {
 		markdown: "# Packaged review\n\nA cautious conclusion.\n",
 	});
 	assert.equal(saved.ok, true, JSON.stringify(saved));
-	// Re-open using the real picker callback so its real list includes our fixture.
-	await evaluate(
-		`(() => {const original=window.__TAURI_INTERNALS__.invoke;window.__TAURI_INTERNALS__.invoke=(cmd,args,...rest)=>{if(cmd==='plugin:dialog|open'){window.__TAURI_INTERNALS__.invoke=original;return Promise.resolve(${JSON.stringify(root)});}return original(cmd,args,...rest);};document.querySelector('aside button').click();})()`,
-	);
+	// Re-open through the native picker to refresh the real manuscript list.
+	await evaluate(`document.querySelector('aside button').click()`);
+	pickWorkspace(root);
 	await until(
 		`!!document.querySelector('nav button')`,
 		"Created manuscript missing from UI",
@@ -291,6 +308,30 @@ try {
 		parsed.data.manuscript.includes("Margin packaged PDF parsing fixture"),
 		"Bundled PDFium worker failed",
 	);
+	const blank = await PDFDocument.create();
+	blank.addPage();
+	blank.addPage();
+	const blankPath = path.join(root, "blank.pdf");
+	await fs.writeFile(blankPath, await blank.save());
+	const blankImport = await ipc("margin_import", {
+		vaultPath: root,
+		filePaths: [blankPath],
+	});
+	assert.equal(blankImport.ok, true, JSON.stringify(blankImport));
+	const blankContext = { vaultPath: root, reviewId: blankImport.data[0].id };
+	const beforeBlank = (await ipc("margin_open", blankContext)).data;
+	const noText = await ipc("margin_parse_pdf", blankContext);
+	assert.equal(
+		noText.ok,
+		false,
+		"Blank PDF should not produce a usable manuscript",
+	);
+	assert.equal(noText.error.code, "pdf_needs_ocr", JSON.stringify(noText));
+	assert.equal(
+		(await ipc("margin_open", blankContext)).data.headId,
+		beforeBlank.headId,
+		"Failed extraction changed the manuscript",
+	);
 	assert.deepEqual(errors, [], "Production runtime/CSP errors");
 	await fs.mkdir("artifacts", { recursive: true });
 	const screenshot = await send("Page.captureScreenshot", { format: "png" });
@@ -299,13 +340,10 @@ try {
 		Buffer.from(screenshot.data, "base64"),
 	);
 	console.log(
-		"Installed release passed: production CSP/assets, real editor autosave, SQLite, seven scoped MCP tools, idempotent pending proposal, human application, baseline preservation, UI reload, revocation, legacy IPC isolation and bundled PDFium subprocess parsing.",
+		"Installed release passed: production CSP/assets, real editor autosave, SQLite, seven scoped MCP tools, idempotent pending proposal, human application, baseline preservation, UI reload, revocation, legacy IPC isolation, bundled PDFium text extraction and safe rejection of a textless PDF.",
 	);
 } finally {
 	await ipc("margin_ai_stop").catch(() => {});
-	await evaluate(
-		`window.__marginSmokeRestore?.(); delete window.__marginSmokeRestore;`,
-	).catch(() => {});
 	socket.close();
 	// Remove only the fixture directory created by this invocation.
 	await fs.rm(root, { recursive: true, force: true });

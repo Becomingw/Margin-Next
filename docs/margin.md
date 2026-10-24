@@ -22,6 +22,8 @@ CI 使用 Node.js 24。首次独立 Windows x64 预览使用 `0.1.0-beta.1`，�
   已授权工作区、Margin 文档 IPC 和 PDF 中文字体回退，不再装配文件型 `ReviewEditCache`。
 - 不启动上游 Vault 初始化、catalog、Agent/ACP、完整 MCP 服务器、推荐、连接器、
   更新检查、云同步，也不迁移或加载 Edda 的全局配置。
+- PDF 正文仅提取文字层，不打包 Tesseract / Leptonica 或隐式下载 OCR 模型。
+  无文字的扫描件返回 `pdf_needs_ocr`，保留原稿，需先转成 Markdown；发行验证发现的旧 OCR 原生崩溃见 [复盘](bug_fix/margin-windows-ocr.md)。
 - Tauri 应用 identifier 和主题存储独立；不跟随 Edda 更新通道。
 - 独立蓝 / 红 / 黄 / 绿品牌图标：SVG 源、桌面 / 移动生成资产、NSIS 侧图、标题栏、favicon 与导出水印同步。Windows 显式设置小图标和任务栏大图标，二进制名为 `margin.exe`；修改图标后需重建原生程序，前端热更新不会替换运行中的 EXE 图标。
 - Windows 主窗以原生标题区覆盖层合并应用顶栏，不再显示两层标题框。保留系统按钮与关闭事件；实现及验证入口见 [组件约定](frontend/components.md#margin-windows-窗口)。

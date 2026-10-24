@@ -93,7 +93,7 @@ Details: [transactional backend](docs/backend/margin.md) (Chinese).
 ## Current boundaries
 
 - **Not an in-place LaTeX editor.** TeX import and Plate serialization do not preserve source bytes exactly.
-- **PDF and complex manuscripts need further validation.** Reference PDFs and inherited parsing adapters remain, but offline OCR, complex layouts and every long-document workflow are not claimed as validated. AI tools read Markdown, not PDF or image contents directly.
+- **PDF and complex manuscripts need further validation.** The preview extracts native PDF text only, without OCR or automatic model downloads; convert scanned documents to Markdown first. Complex layouts and long-manuscript workflows need further validation. AI tools read Markdown, not PDF or image contents directly.
 - **No multi-AI or automatic merging.** One reviewer role; no built-in autonomous model execution, three-way merge, remote multi-user collaboration or account authentication.
 - **Not a stable release.** Full history browsing, cross-manuscript comment-draft protection, further dependency extraction and security hardening remain follow-ups. Windows 11 captions and cross-monitor DPI await real-device validation. Preview permissions and CSP are narrowed, not comprehensively security-audited.
 
