@@ -17,7 +17,8 @@
    ```
 
    使用 `cargo metadata` 的 `target_directory` 定位 `release/bundle/nsis/`。
-   默认构建只有 `margin.exe`；release 禁止 `legacy-workbench`。
+   `mainBinaryName` 必须显式为 `margin`（Cargo 包名为 `margin-desktop`）；
+   默认构建只有 `margin.exe`，release 禁止 `legacy-workbench`。
    此本地发布流程不依赖上游安装器工作流成功；须记录本地验证结果并检查 Margin CI。
 
 ## 打包边界

@@ -34,6 +34,7 @@ jobs:
           set -euo pipefail
           node --input-type=commonjs -e "
             const conf = require('./src-tauri/tauri.conf.json');
+            if (conf.mainBinaryName !== 'margin') throw new Error('Tauri must package the margin binary, not the Cargo package name');
             const bins = conf.bundle && conf.bundle.externalBin;
             if (bins?.length || conf.build.beforeBuildCommand.includes('cli:')) {
               console.error('Desktop packages expose business operations through MCP, without sidecars');
