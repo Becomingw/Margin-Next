@@ -28,7 +28,7 @@
 - 只启用主窗口 `default` capability，无 updater / shell / process 权限。
   打开目录后动态授予文件访问范围；所有已打开目录仍保留到进程退出。
 - 不注册旧工作台的 Explorer 菜单、深链或更新通道，不编入旧 provider 密钥。
-- 安装包应包含 PDFium DLL、MIT LICENSE / NOTICE、
+- 安装包应包含 PDFium DLL 及其原始许可证 / 依赖 notices、MIT LICENSE / NOTICE、
   `skills/margin-mcp-reviewer/`；Skill 是可选指引，不是内置模型或后台 Agent。
 - 用临时目录安装并启动已安装的 release 程序；检查资源、原生图标、窗口、
   正文保存、MCP 授权 / 提案 / 撤销与 CSP，不用开发服务器代替安装包验收。

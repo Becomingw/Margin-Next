@@ -165,6 +165,21 @@ if (size < 1024 * 1024) {
 
 fs.copyFileSync(src, dest);
 
+// Binary redistribution must retain PDFium's BSD notice and the dependency
+// notices that accompany this exact distribution, not just the shared library.
+const distributionRoot = path.dirname(path.dirname(src));
+const pdfiumLicense = path.join(distributionRoot, "LICENSE");
+const dependencyLicenses = path.join(distributionRoot, "licenses");
+if (!fs.existsSync(pdfiumLicense) || !fs.existsSync(dependencyLicenses)) {
+	throw new Error(
+		"PDFium license notices missing; PDFIUM_LIB_PATH must point into a complete PDFium distribution",
+	);
+}
+fs.copyFileSync(pdfiumLicense, path.join(outDir, "LICENSE"));
+fs.cpSync(dependencyLicenses, path.join(outDir, "licenses"), {
+	recursive: true,
+});
+
 // pdfium-binaries ships an install name of `./libpdfium.dylib`; codesign and
 // @rpath resolution inside Contents/Frameworks need the @rpath form.
 if (isMac) {

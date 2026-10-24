@@ -8,7 +8,7 @@
   "bundle": {
     "targets": ["nsis"],
     "resources": {
-      "pdfium/pdfium.dll": "pdfium/pdfium.dll",
+      "pdfium/": "pdfium/",
       "../LICENSE": "LICENSE",
       "../NOTICE.md": "NOTICE.md",
       "../skills/margin-mcp-reviewer/": "skills/margin-mcp-reviewer/"
