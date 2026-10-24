@@ -19,6 +19,7 @@ Margin 预览本来没有承诺 OCR，因此收窄到明确支持的 PDF 文字�
 - 解析时显式 `ocr_enabled: false`，不隐式下载训练模型。
 - 去掉不再适用的 OCR 质量预判，成功只标记 `pdf` / `medium`。
 - 无可提取文字返回 `pdf_needs_ocr`，让用户先转换 Markdown；不静默写入空正文。
+  worker 协议单独保留 `needs_ocr` 状态，父进程还原领域错误码，避免跨进程后丢成通用 message。
 
 真实发行烟测 `scripts/margin-release-smoke.mjs` 必须检查文字 PDF 提取成功，
 以及空白 PDF 明确失败且版本不变。这个最小样本不代表复杂版式、扫描件识别或长文档已通过验收。

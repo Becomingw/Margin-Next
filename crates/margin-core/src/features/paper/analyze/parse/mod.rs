@@ -345,6 +345,9 @@ enum PdfParseWorkerResponse {
     Err {
         message: String,
     },
+    NeedsOcr {
+        message: String,
+    },
 }
 
 /// One word's geometry from a PDF page, in liteparse viewport coords
@@ -529,17 +532,23 @@ pub fn try_run_pdf_parse_worker() -> Option<i32> {
                     .map_err(|error| error.to_string())
                     .and_then(|r| serde_json::to_value(&r).map_err(|e| e.to_string()))
             } else {
-                runtime
-                    .block_on(run_liteparse_markdown_direct(&request.pdf_path))
-                    .map(
-                        |(markdown, body_source, body_quality)| PdfParseWorkerResponse::Ok {
+                let response =
+                    match runtime.block_on(run_liteparse_markdown_direct(&request.pdf_path)) {
+                        Ok((markdown, body_source, body_quality)) => PdfParseWorkerResponse::Ok {
                             markdown,
                             body_source,
                             body_quality,
                         },
-                    )
-                    .map_err(|error| error.to_string())
-                    .and_then(|r| serde_json::to_value(&r).map_err(|e| e.to_string()))
+                        Err(error) if error.code() == "pdf_needs_ocr" => {
+                            PdfParseWorkerResponse::NeedsOcr {
+                                message: error.to_string(),
+                            }
+                        }
+                        Err(error) => PdfParseWorkerResponse::Err {
+                            message: error.to_string(),
+                        },
+                    };
+                serde_json::to_value(&response).map_err(|e| e.to_string())
             };
             match outcome {
                 Ok(value) => value,
@@ -643,6 +652,9 @@ async fn run_liteparse_markdown(
             body_quality,
         } => Ok((markdown, body_source, body_quality)),
         PdfParseWorkerResponse::Err { message } => Err(AppError::message(message)),
+        PdfParseWorkerResponse::NeedsOcr { message } => {
+            Err(AppError::domain("pdf_needs_ocr", message))
+        }
     }
 }
 
@@ -1338,6 +1350,9 @@ mod tests {
             },
             PdfParseWorkerResponse::Err {
                 message: "broken PDF".into(),
+            },
+            PdfParseWorkerResponse::NeedsOcr {
+                message: "No extractable PDF text".into(),
             },
         ] {
             let encoded = serde_json::to_vec(&response).unwrap();
