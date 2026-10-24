@@ -25,6 +25,8 @@
 
 - release 配置启用显式 CSP，限制脚本 / 连接来源，允许本地 WASM、worker 和文档资源。
   图片可来自 HTTPS；这不是对不可信文稿的全面沙箱或完整安全审计。
+  Plate / Radix 等运行时需要内联 CSS；仅对 `style-src` 关闭 Tauri 的自动 nonce 注入，
+  避免 nonce 使显式 `unsafe-inline` 失效。脚本哈希注入仍启用，不能全局关闭 CSP 修改或允许脚本 `unsafe-eval`。
 - 只启用主窗口 `default` capability，无 updater / shell / process 权限。
   打开目录后动态授予文件访问范围；所有已打开目录仍保留到进程退出。
 - 不注册旧工作台的 Explorer 菜单、深链或更新通道，不编入旧 provider 密钥。

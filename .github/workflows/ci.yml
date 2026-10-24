@@ -34,6 +34,8 @@ jobs:
           set -euo pipefail
           node --input-type=commonjs -e "
             const conf = require('./src-tauri/tauri.conf.json');
+            const release = require('./src-tauri/tauri.release.conf.json');
+            if (JSON.stringify(release.app.security.dangerousDisableAssetCspModification) !== JSON.stringify(['style-src'])) throw new Error('Only CSS nonce injection may be disabled; keep script CSP protection');
             if (conf.mainBinaryName !== 'margin') throw new Error('Tauri must package the margin binary, not the Cargo package name');
             if (!require('node:fs').readFileSync('./src-tauri/Cargo.toml','utf8').includes('default-run = \"margin\"')) throw new Error('Cargo must select the margin executable by default');
             const bins = conf.bundle && conf.bundle.externalBin;
