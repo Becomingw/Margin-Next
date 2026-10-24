@@ -11,7 +11,7 @@
   <a href="README.md">中文</a> · <b>English</b> · <a href="docs/margin.md">Project notes · 中文</a> · <a href="docs/margin-single-ai.md">AI setup · 中文</a> · <a href="LICENSE">MIT</a>
 </p>
 
-> **Development preview. No official installers yet.** The current checkpoint is one AI reviewer + one local author, not a multi-agent platform or the complete Edda research workbench. Back up important manuscripts first.
+> **Windows x64 development preview.** The current checkpoint is one AI reviewer + one local author, not a multi-agent platform. Installers are available only for published previews under [Releases](https://github.com/Becomingw/Margin-Next/releases); drafts are not public. Back up important manuscripts first.
 
 <p align="center">
   <img src="docs/assets/margin-review.png" width="100%" alt="Actual Margin desktop interface with inline tracked changes, anchored comments and replies, using a fictional manuscript" />
@@ -26,6 +26,12 @@
 - **Keep your workspace local.** Start with an ordinary folder. Export Markdown, the baseline, a complete review database and attachments; restore an exported database as a new manuscript.
 
 ## Run locally
+
+### Windows preview installer
+
+Download `Margin_<version>_x64-setup.exe` from Releases and verify `SHA256SUMS.txt` before running it. Requires Windows 10 / 11 x64 and WebView2; setup can download WebView2 if missing. This preview has no Authenticode signature, so Windows may report an unknown publisher. Download only from this repository and verify its origin; do not disable security protections globally. No validated macOS / Linux / mobile installers are available yet.
+
+### Run from source
 
 Install Node.js 24+, pnpm (see `package.json` for the version), Rust stable, and the platform-specific [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/). Windows needs the C++ build tools and WebView2.
 
@@ -65,7 +71,7 @@ Access is pinned to one manuscript and one reviewer identity. AI can read saved 
 
 The endpoint listens on a random loopback port and requires a Bearer credential. Disconnecting or switching manuscripts revokes the old grant. **Do not publish connection configurations or tokens.** These permissions constrain Margin MCP, not an external client's own filesystem or shell tools. Data shared with an external AI remains subject to that model or provider's policies.
 
-See the [single-AI checkpoint](docs/margin-single-ai.md) for the tool contract, security boundaries and validation details (Chinese).
+Optionally install the [Margin review skill](skills/README.md), or use MCP directly. The installer includes `skills/margin-mcp-reviewer/`; Releases also provide a standalone skill ZIP. See the [single-AI checkpoint](docs/margin-single-ai.md) for the tool contract, security boundaries and validation details (Chinese).
 
 ## Your data
 
@@ -89,7 +95,7 @@ Details: [transactional backend](docs/backend/margin.md) (Chinese).
 - **Not an in-place LaTeX editor.** TeX import and Plate serialization do not preserve source bytes exactly.
 - **PDF and complex manuscripts need further validation.** Reference PDFs and inherited parsing adapters remain, but offline OCR, complex layouts and every long-document workflow are not claimed as validated. AI tools read Markdown, not PDF or image contents directly.
 - **No multi-AI or automatic merging.** One reviewer role; no built-in autonomous model execution, three-way merge, remote multi-user collaboration or account authentication.
-- **Not release-ready.** Full history browsing, cross-manuscript comment-draft protection, dependency extraction, installers, and pre-release permission / CSP auditing remain follow-ups.
+- **Not a stable release.** Full history browsing, cross-manuscript comment-draft protection, further dependency extraction and security hardening remain follow-ups. Windows 11 captions and cross-monitor DPI await real-device validation. Preview permissions and CSP are narrowed, not comprehensively security-audited.
 
 ## Development
 

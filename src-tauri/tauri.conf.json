@@ -32,19 +32,6 @@
   "plugins": {
     "fs": {
       "requireLiteralLeadingDot": false
-    },
-    "deep-link": {
-      "desktop": {
-          "schemes": ["margin-next"]
-      },
-      "mobile": [
-        {
-          "scheme": [
-            "margin-next"
-          ],
-          "appLink": false
-        }
-      ]
     }
   },
   "bundle": {
@@ -52,6 +39,12 @@
     "createUpdaterArtifacts": false,
     "targets": "all",
     "category": "Productivity",
+    "publisher": "Becomingw",
+    "homepage": "https://github.com/Becomingw/Margin-Next",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "shortDescription": "Local-first manuscript review",
+    "longDescription": "Tracked changes, margin conversations and human-controlled AI review proposals.",
     "resources": [
       "pdfium/*"
     ],
@@ -60,7 +53,6 @@
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
-      "icons/ios/AppIcon-512@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ],

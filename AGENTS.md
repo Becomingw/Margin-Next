@@ -2,9 +2,9 @@
 
 ## 项目概览
 
-Edda 是一个基于 Tauri 2 + React 19 的本地优先科研工作台。Vault 中笔记与源文件以 Markdown/文件为准，论文结构化 metadata 以 `.edda/catalog.sqlite` 为准。离开应用后数据仍可被外部工具读取。
+Margin 是基于 Tauri 2 + React 19 的本地优先稿件审阅应用。每稿的 `.margin/documents/<id>/review.sqlite` 是正文版本、基线、提案、批注和裁决的权威存储；虚拟 `manuscript.md` 不可作为独立活文件写入。AI 仅提交待审提案，作者负责应用和接受 / 拒绝。
 
-架构总览：[docs/architecture.md](docs/architecture.md)
+架构与边界：[docs/margin.md](docs/margin.md)、[事务核心](docs/backend/margin.md)、[单 AI MCP](docs/margin-single-ai.md)。保留的上游源码 / 文档不代表 Margin 对外开放这些功能。
 
 ## 开发规则
 
@@ -33,7 +33,8 @@ Edda 是一个基于 Tauri 2 + React 19 的本地优先科研工作台。Vault �
 - 一次提交只做一件事，避免混合多个 unrelated changes。
 - 如果有多个 unrelated changes，`git commit --only -m "msg" -- <path1> <path2>` 使用只提交指定路径的改动
 - 项目级 Agent Skill：`.agents/skills/bump/SKILL.md` 定义版本升级流程；`.agents/skills/commit/SKILL.md` 定义按逻辑拆分当前改动并提交的流程。
-- 面向外部 Agent 的 Skill 在 `skills/`（`edda-mcp-library`、`edda-mcp-reviewer`），与知识库内置的 `templates/vault/.agents/skills/edda-workspace`、`edda-paper-reviewer` 分开维护；MCP 工具契约变化时两处同步。
+- 面向外部 Agent 的 Skill 是 `skills/margin-mcp-reviewer/`，MCP 工具契约变化时同步维护并运行 `test/margin-skill.test.ts`。`templates/vault/` 为尚未裁剪的上游资料，不是 Margin 的运行时模板。
+- 仅向 `origin`（`Becomingw/Margin-Next`）推送，不能误推 `upstream`。默认构建只装配 Margin，`legacy-workbench` 不得用于 release。Windows 预览打包使用 `src-tauri/tauri.release.conf.json`，流程见 [发布说明](docs/development/release.md)。保留 MIT 来源署名，不以全仓字符串替换破坏兼容标记。
 - `bump` Skill 只修改版本来源文件并运行最小验证，默认不创建 commit、tag、Release 或 push；需要时由用户显式要求。
 - `commit` Skill 必须保留用户已有改动，按目的精确暂存，检查相关文档，并只创建本地 Conventional Commit。
 - 如果库当中有对应的 issue，则在提交信息中引用（如 `Fix #123`）；解决了该 issue 则关闭；部分解决则在 issue 区评论。
@@ -52,9 +53,10 @@ pnpm tauri build
 ```
 
 ```bash
-# 应用内 MCP 与共享业务服务（仓库根 workspace）
-cargo test -p edda integration::mcp
-cargo test -p edda-core   # tauri 无关基础层（crates/edda-core）
+# 单 AI MCP 与共享事务服务（仓库根 workspace）
+cargo test -p margin-desktop margin::ai::tests --lib
+cargo test -p margin-core
+pnpm tauri build --config src-tauri/tauri.release.conf.json --bundles nsis
 ```
 
 完成实现前运行最小必要验证。UI 改动优先启动应用检查对应流程。
@@ -63,9 +65,9 @@ cargo test -p edda-core   # tauri 无关基础层（crates/edda-core）
 
 | 层 | 技术栈 | 关键能力 | 入口 |
 |---|---|---|---|
-| 前端 | React 19、TypeScript、Tailwind CSS 4、shadcn/ui、AI Elements | zustand 按域状态管理、Plate Markdown 编辑器、EmbedPDF 渲染、Dockview 多面板工作区 | [docs/frontend/](docs/frontend/index.md) |
-| Host | Rust、Tauri 2、feature-first 布局 | 文件系统与 Vault 树、Catalog SQLite、Wiki 双链索引、ACP Client、本地文件监听、可选 loopback MCP | [docs/backend/](docs/backend/index.md) |
-| MCP | Rust、Streamable HTTP | 应用运行时的文献、任务、标注、推荐和导出接口；内部 ACP 与外部 Agent 复用 | [docs/backend/mcp.md](docs/backend/mcp.md) |
+| 前端 | React 19、TypeScript、Tailwind CSS 4、Plate、EmbedPDF | `src/margin/` 独立壳、行内修订与页边讨论 | [docs/margin.md](docs/margin.md) |
+| Host | Rust、Tauri 2、SQLite | `margin-desktop` / `margin_lib`、`crates/margin-core` 事务服务 | [docs/backend/margin.md](docs/backend/margin.md) |
+| MCP | Rust、Streamable HTTP | 单稿、单审阅身份、可撤销授权；七个审阅工具 | [docs/margin-single-ai.md](docs/margin-single-ai.md) |
 
 | 分类 | 内容 | 路径 |
 |---|---|---|

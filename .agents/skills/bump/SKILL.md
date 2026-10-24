@@ -1,13 +1,13 @@
 ---
 name: bump
 description: >-
-  Upgrade Edda application, shared core, desktop, and release versions together.
+  Upgrade Margin application, shared core, desktop, and release versions together.
   Use when changing the project version or preparing a release.
 ---
 
 # Version Bump
 
-升级 Edda 的应用版本，并确保桌面安装包、共享业务层和发布 tag 使用同一个版本号。
+升级 Margin 的应用版本，并确保桌面安装包、共享业务层和发布 tag 使用同一个版本号。
 
 ## 用法
 
@@ -21,10 +21,10 @@ description: >-
    - `package.json` 的 `version`。
    - `src-tauri/tauri.conf.json` 的 `version`。
    - `src-tauri/Cargo.toml` 的 package `version`。
-   - `crates/edda-core/Cargo.toml` 的 package `version`（`edda_core::http` 用 `CARGO_PKG_VERSION` 拼 User-Agent，必须与主 crate 锁步）。
+   - `crates/margin-core/Cargo.toml` 的 package `version`（`margin_core::http` 用 `CARGO_PKG_VERSION` 拼 User-Agent，必须与主 crate 锁步）。
    - `src-tauri/ios-project.yml` 的 `CFBundleShortVersionString` 与 `CFBundleVersion`。
 
-   Android 不需要手动修改：`tauri android build` 会从 `tauri.conf.json` 的 `version` 重新生成 `src-tauri/gen/android/app/tauri.properties`（gitignored）中的 `versionName` 与 `versionCode`。
+   保留的移动端模板不代表有已验证的 Margin 移动发行版，不应启动上游发布工作流。
 4. 如果 Cargo manifest 版本变化，运行必要的 Cargo 元数据/检查命令并确认 `Cargo.lock` 没有保留旧的本地 package 版本。
 5. 检查版本字段全部等于目标版本，并确认桌面包不再声明业务 CLI sidecar。
 6. 检查 `AGENTS.md` 和 `docs/development/release.md` 中的发布规则仍与实现一致；只有规则变化时才修改文档，不要伪造版本说明或变更日志。

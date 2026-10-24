@@ -11,6 +11,7 @@
 		"preview": "vite preview",
 		"test": "vitest run",
 		"test:margin-native": "node scripts/margin-native-smoke.mjs",
+		"test:margin-release": "node scripts/margin-release-smoke.mjs",
 		"typecheck": "tsc --noEmit",
 		"ios:release:check": "node scripts/ios-release-check.mjs",
 		"demo:vault": "node test/scripts/create-demo-vault.mjs",

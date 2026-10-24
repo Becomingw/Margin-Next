@@ -11,7 +11,7 @@
   <b>中文</b> · <a href="README.en.md">English</a> · <a href="docs/margin.md">项目说明</a> · <a href="docs/margin-single-ai.md">接入 AI</a> · <a href="LICENSE">MIT</a>
 </p>
 
-> **开发预览，尚无正式安装包。** 当前 checkpoint 是「单 AI + 本机作者」，不是多 AI 协作平台，也不是 Edda 的完整科研工作台。请先备份重要稿件。
+> **Windows x64 开发预览。** 当前 checkpoint 是「单 AI + 本机作者」，不是多 AI 协作平台。安装包以 [Releases](https://github.com/Becomingw/Margin-Next/releases) 中已发布的预览版为准；Draft 尚未公开。请先备份重要稿件。
 
 <p align="center">
   <img src="docs/assets/margin-review.png" width="100%" alt="Margin 真实桌面界面：正文行内修订、页边批注与回复，使用虚构演示稿件" />
@@ -26,6 +26,12 @@
 - **数据留在工作区**：选择普通文件夹即可开始。可导出正文、基线、完整审阅数据库与附件，也可从导出的数据库恢复为新稿件。
 
 ## 本地运行
+
+### Windows 预览安装
+
+在 Releases 下载 `Margin_<版本>_x64-setup.exe`，核对 `SHA256SUMS.txt` 后运行。需要 Windows 10 / 11 x64 和 WebView2；安装程序可下载缺失的 WebView2。当前预览没有 Authenticode 签名，Windows 可能显示未知发布者警告。仅从本仓库下载并核对来源，不要全局关闭安全防护。macOS / Linux / 移动端暂无已验收安装包。
+
+### 从源码运行
 
 需要 Node.js 24+、pnpm（版本见 `package.json`）、Rust stable，以及对应系统的 [Tauri 2 开发环境](https://v2.tauri.app/start/prerequisites/)。Windows 需要 C++ 构建工具和 WebView2。
 
@@ -65,7 +71,7 @@ Margin 提供审阅专用的 **Streamable HTTP MCP**，不内置模型聊天，�
 
 连接只监听本机随机端口，需要 Bearer 凭证。断开连接或切换稿件会撤销旧授权。**不要公开连接配置或令牌。** 这个边界只约束 Margin MCP，不限制外部 AI 客户端自身的文件或命令工具；你交给外部客户端的数据仍受其模型 / 服务商政策影响。
 
-完整工具契约、安全边界与验证方式见 [单 AI checkpoint](docs/margin-single-ai.md)。
+可选搭配 [Margin 审阅 Skill](skills/README.md)，也可直接使用 MCP。安装包附带 `skills/margin-mcp-reviewer/`，Release 另提供独立技能 ZIP。完整工具契约、安全边界与验证方式见 [单 AI checkpoint](docs/margin-single-ai.md)。
 
 ## 数据如何保存
 
@@ -89,7 +95,7 @@ Margin 提供审阅专用的 **Streamable HTTP MCP**，不内置模型聊天，�
 - **不是 LaTeX 原位编辑器**：TeX 导入和 Plate 序列化不保证源码逐字节不变。
 - **PDF / 复杂稿件仍需验证**：保留参考 PDF 和上游解析适配，不宣称已验证离线 OCR、复杂版式或长稿件的全部流程。AI 工具以 Markdown 正文为准，不直接读取 PDF / 图片。
 - **不含多 AI 与自动合并**：单一审阅角色，没有内置 AI 自动运行、三方合并、远程多用户协作或身份认证。
-- **不是正式发行版**：完整历史浏览、跨稿件评论草稿保护、依赖裁剪、安装包与发布前权限 / CSP 审计仍在后续范围。
+- **不是稳定发行版**：完整历史浏览、跨稿件评论草稿保护、继续裁剪依赖与安全加固仍在后续范围。Windows 11 标题区与跨屏 DPI 尚待实机验收；预览包收窄了权限和 CSP，但不代表完成全面安全审计。
 
 ## 开发与验证
 

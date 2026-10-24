@@ -3,6 +3,7 @@
 Margin fork 的当前实现和剩余拆分范围见 [独立审阅说明](../margin.md)。下面是保留的上游 Edda 规划，不自动纳入 Margin 范围。
 Margin 的事务版本 / 提案内核已实现，契约与未实现边界见 [后端文档](../backend/margin.md)。
 当前收敛到 [单 AI + 人 checkpoint](../margin-single-ai.md)，多 AI / 自动合并暂缓。
+独立 Windows 预览的版本、打包、安全边界与人工发布门禁见 [release.md](release.md)。
 
 本目录只放：
 
