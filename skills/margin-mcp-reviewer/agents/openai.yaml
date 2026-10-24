@@ -1,0 +1,4 @@
+interface:
+  display_name: "Margin Reviewer"
+  short_description: "Review a shared manuscript without taking over author decisions"
+  default_prompt: "Use the Margin review skill to read the authorized manuscript and its threads. Comment by default; submit requested rewrites as pending proposals, preserving the full document and leaving application and acceptance to the author."
