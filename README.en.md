@@ -110,6 +110,6 @@ Entry points: `src/margin/` (standalone frontend), `src-tauri/src/margin/` (Host
 
 ## Origins and license
 
-Margin's review foundation was extracted from [Edda](https://github.com/Becomingw/Edda) v0.19.0, reusing and adapting its editor, inline revisions and comments. The new mist-blue and mint icon follows the same matte mascot style. This public repository starts at an independent root commit without Edda's Git history. **That does not mean every source file is new:** unused inherited modules and older documentation are still being extracted.
+Margin's review foundation was extracted from [Edda](https://github.com/Becomingw/Edda) v0.19.0, reusing and adapting its editor, inline revisions and comments. The icon keeps the matte mascot style with a Google / Material-inspired blue, red, yellow and green palette; it is not a Google product or official mark. This public repository starts at an independent root commit without Edda's Git history. **That does not mean every source file is new:** unused inherited modules and older documentation are still being extracted.
 
 This is separate from the older Margin implementation and does not reuse its DOM / Node backend. The MIT license and original attribution are retained. See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md).

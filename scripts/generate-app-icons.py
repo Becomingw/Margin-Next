@@ -16,7 +16,7 @@ SOURCE = ROOT / "src/assets/margin-app-icon.svg"
 ICONS = ROOT / "src-tauri/icons"
 
 subprocess.run(
-    [shutil.which("pnpm.cmd") or shutil.which("pnpm") or "pnpm", "tauri", "icon", str(SOURCE), "--output", str(ICONS), "--ios-color", "#142D43"],
+    [shutil.which("pnpm.cmd") or shutil.which("pnpm") or "pnpm", "tauri", "icon", str(SOURCE), "--output", str(ICONS), "--ios-color", "#F8FAFD"],
     cwd=ROOT,
     check=True,
 )

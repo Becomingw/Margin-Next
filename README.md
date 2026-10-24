@@ -110,6 +110,6 @@ cargo clippy --workspace --all-targets -- -D warnings
 
 ## 来源与许可证
 
-Margin 的审阅基础提取自 [Edda](https://github.com/Becomingw/Edda) v0.19.0，保留并改造其编辑器、行内修订和批注能力。新图标延续其哑光吉祥物风格，改用雾蓝与薄荷色。公开仓库从独立根提交开始，不携带 Edda 的 Git 提交历史；**这不表示所有源码都是新写的**，继承的未用模块与旧文档仍在逐步裁剪。
+Margin 的审阅基础提取自 [Edda](https://github.com/Becomingw/Edda) v0.19.0，保留并改造其编辑器、行内修订和批注能力。图标延续其哑光吉祥物风格，使用 Google / Material 产品风格启发的蓝、红、黄、绿配色，但不是 Google 产品或官方标识。公开仓库从独立根提交开始，不携带 Edda 的 Git 提交历史；**这不表示所有源码都是新写的**，继承的未用模块与旧文档仍在逐步裁剪。
 
 本项目不同于旧 Margin 实现，不复用旧项目的 DOM / Node 后端。MIT 许可证与原作者署名保留，详见 [LICENSE](LICENSE) 和 [NOTICE.md](NOTICE.md)。

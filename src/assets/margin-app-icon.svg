@@ -2,32 +2,35 @@
   <title>Margin</title>
   <defs>
     <linearGradient id="tile" x1="180" y1="100" x2="820" y2="924" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#345A73"/><stop offset="1" stop-color="#142D43"/>
+      <stop stop-color="#4285F4"/><stop offset="1" stop-color="#1A73E8"/>
     </linearGradient>
-    <!-- A cool, matte companion to Edda: light falls across a mint face. -->
+    <!-- Material-inspired blue, red, yellow and green; not a Google logo. -->
     <radialGradient id="face" cx="414" cy="408" r="668" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F2FFF9"/>
-      <stop offset=".42" stop-color="#DCEFE5"/>
-      <stop offset=".78" stop-color="#A6C9BD"/>
-      <stop offset="1" stop-color="#709C92"/>
+      <stop stop-color="#FFFFFF"/>
+      <stop offset=".42" stop-color="#F8FAFF"/>
+      <stop offset=".78" stop-color="#E8F0FE"/>
+      <stop offset="1" stop-color="#C2D7F7"/>
     </radialGradient>
     <radialGradient id="eye" cx=".35" cy=".25" r=".95">
-      <stop stop-color="#233D48"/><stop offset="1" stop-color="#102630"/>
+      <stop stop-color="#4285F4"/><stop offset="1" stop-color="#1967D2"/>
     </radialGradient>
-    <filter id="blush" x="-60%" y="-100%" width="220%" height="300%"><feGaussianBlur stdDeviation="17"/></filter>
+    <radialGradient id="greenEye" cx=".35" cy=".25" r=".95">
+      <stop stop-color="#34A853"/><stop offset="1" stop-color="#188038"/>
+    </radialGradient>
+    <filter id="blush" x="-60%" y="-100%" width="220%" height="300%"><feGaussianBlur stdDeviation="11"/></filter>
     <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="32"/></filter>
     <clipPath id="clip"><rect x="100" y="100" width="824" height="824" rx="184"/></clipPath>
   </defs>
-  <rect x="100" y="108" width="824" height="824" rx="184" fill="#081E2A" opacity=".2"/>
+  <rect x="100" y="108" width="824" height="824" rx="184" fill="#174EA6" opacity=".16"/>
   <rect x="100" y="100" width="824" height="824" rx="184" fill="url(#tile)"/>
   <g clip-path="url(#clip)">
-    <ellipse cx="640" cy="814" rx="474" ry="498" fill="#081E2A" opacity=".32" filter="url(#shadow)" transform="rotate(14 640 814)"/>
+    <ellipse cx="640" cy="814" rx="474" ry="498" fill="#174EA6" opacity=".24" filter="url(#shadow)" transform="rotate(14 640 814)"/>
     <!-- The face leans in from the right, like a reader at the page margin. -->
     <ellipse cx="620" cy="816" rx="462" ry="494" fill="url(#face)" transform="rotate(14 620 816)"/>
     <ellipse cx="428" cy="558" rx="39" ry="68" fill="url(#eye)" transform="rotate(10 428 558)"/>
-    <ellipse cx="594" cy="594" rx="45" ry="74" fill="url(#eye)" transform="rotate(10 594 594)"/>
-    <ellipse cx="342" cy="666" rx="56" ry="29" fill="#DEA8A6" opacity=".46" filter="url(#blush)" transform="rotate(10 342 666)"/>
-    <ellipse cx="656" cy="712" rx="62" ry="32" fill="#DEA8A6" opacity=".48" filter="url(#blush)" transform="rotate(10 656 712)"/>
+    <ellipse cx="594" cy="594" rx="45" ry="74" fill="url(#greenEye)" transform="rotate(10 594 594)"/>
+    <ellipse cx="342" cy="666" rx="56" ry="29" fill="#FBBC04" opacity=".82" filter="url(#blush)" transform="rotate(10 342 666)"/>
+    <ellipse cx="656" cy="712" rx="62" ry="32" fill="#EA4335" opacity=".7" filter="url(#blush)" transform="rotate(10 656 712)"/>
   </g>
-  <rect x="102" y="102" width="820" height="820" rx="182" fill="none" stroke="#F2FFF9" stroke-opacity=".1" stroke-width="4"/>
+  <rect x="102" y="102" width="820" height="820" rx="182" fill="none" stroke="#FFFFFF" stroke-opacity=".18" stroke-width="4"/>
 </svg>
