@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 
@@ -268,6 +269,19 @@ export async function runSingleAiCheckpoint({
 			`window.__marginAiSaveWaiting`,
 			"Editor save did not reach the delayed transport",
 		);
+		if (process.platform === "win32")
+			execFileSync(
+				"powershell.exe",
+				[
+					"-NoProfile",
+					"-ExecutionPolicy",
+					"Bypass",
+					"-File",
+					"scripts/margin-window-smoke.ps1",
+					"-VerifyCloseBlocked",
+				],
+				{ windowsHide: true, timeout: 15000 },
+			);
 		const base = await call("review_read");
 		assert.ok(
 			!base.manuscript.includes("Human-only checkpoint draft."),

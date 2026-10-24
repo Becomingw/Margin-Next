@@ -15,7 +15,7 @@ name = "edda_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [[bin]]
-name = "edda"
+name = "margin"
 path = "src/main.rs"
 # The desktop GUI binary needs the desktop stack; headless builds
 # (`--no-default-features`) skip it.
@@ -138,7 +138,16 @@ security-framework-sys = "2.17"
 
 [target.'cfg(windows)'.dependencies]
 webview2-com = { version = "0.38", optional = true }
-windows = { version = "0.61", optional = true, features = ["Win32_System_Com_StructuredStorage"] }
+windows = { version = "0.61", optional = true, features = [
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_LibraryLoader",
+  "Win32_Graphics_Dwm",
+  "Win32_Graphics_Gdi",
+  "Win32_UI_Controls",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
 
 # openssh / sendfd are Unix-only (ControlMaster fd passing). Remote vault SFTP
 # is therefore unavailable on Windows until a portable backend lands.

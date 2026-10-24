@@ -3,9 +3,45 @@
 
 mod ai;
 mod commands;
+#[cfg(windows)]
+mod frame;
 use commands::*;
 use std::{collections::HashSet, path::PathBuf, sync::Mutex};
+use tauri::Manager;
 use tauri_plugin_fs::FsExt;
+
+#[tauri::command]
+async fn margin_frame_theme(
+    window: tauri::WebviewWindow,
+    background: [u8; 3],
+    foreground: [u8; 3],
+    dark: bool,
+) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        window
+            .set_theme(Some(if dark {
+                tauri::Theme::Dark
+            } else {
+                tauri::Theme::Light
+            }))
+            .map_err(|e| e.to_string())?;
+        let hwnd = window.hwnd().map_err(|e| e.to_string())?.0 as usize;
+        window
+            .run_on_main_thread(move || {
+                frame::theme(
+                    windows::Win32::Foundation::HWND(hwnd as *mut _),
+                    background,
+                    foreground,
+                    dark,
+                )
+            })
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(windows))]
+    let _ = (window, background, foreground, dark);
+    Ok(())
+}
 
 #[derive(Default)]
 pub(super) struct MarginRoots(Mutex<HashSet<PathBuf>>);
@@ -41,8 +77,19 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(MarginRoots::default())
         .manage(ai::Controller::default())
+        .setup(|app| {
+            if let Some(window) = app.get_webview_window("main") {
+                if let Some(icon) = app.default_window_icon() {
+                    window.set_icon(icon.clone())?;
+                }
+                #[cfg(windows)]
+                frame::install(&window)?;
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             margin_open_workspace,
+            margin_frame_theme,
             crate::features::pdf::export::commands::export_system_cjk_font,
             margin_create,
             margin_import,

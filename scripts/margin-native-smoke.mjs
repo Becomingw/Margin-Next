@@ -40,7 +40,7 @@ public class MarginSmokeWindow {
    var title=new StringBuilder(256); GetWindowText(hwnd,title,256);
    if(title.ToString().StartsWith("Margin")) {
     uint pid; GetWindowThreadProcessId(hwnd,out pid);
-    if(Process.GetProcessById((int)pid).ProcessName=="edda") {ShowWindowAsync(hwnd,9);SetForegroundWindow(hwnd);}
+     if(Process.GetProcessById((int)pid).ProcessName=="margin") {ShowWindowAsync(hwnd,9);SetForegroundWindow(hwnd);}
    }
    return true;
   },IntPtr.Zero);
@@ -665,12 +665,40 @@ try {
 		`import('/src/i18n/index.ts').then(({default: i18n}) => i18n.changeLanguage('zh-CN')).then(() => true)`,
 	);
 	await setDarkMode(false);
+	if (process.platform === "win32")
+		execFileSync(
+			"powershell.exe",
+			[
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"scripts/margin-window-smoke.ps1",
+				"-Label",
+				"window-review-light",
+			],
+			{ windowsHide: true, timeout: 20000 },
+		);
 	const capture = await send("Page.captureScreenshot", { format: "png" });
 	await fs.writeFile(
 		"artifacts/margin-native-review.png",
 		Buffer.from(capture.data, "base64"),
 	);
 	await setDarkMode(true);
+	if (process.platform === "win32")
+		execFileSync(
+			"powershell.exe",
+			[
+				"-NoProfile",
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"scripts/margin-window-smoke.ps1",
+				"-Label",
+				"window-review-dark",
+			],
+			{ windowsHide: true, timeout: 20000 },
+		);
 	const dark = await send("Page.captureScreenshot", { format: "png" });
 	await fs.writeFile(
 		"artifacts/margin-review-dark.png",

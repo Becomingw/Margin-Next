@@ -22,6 +22,9 @@ fn main() {
         );
     }
     if env::var_os("CARGO_FEATURE_DESKTOP").is_some() {
+        // Native window/taskbar and PE resources must rebuild when artwork does.
+        println!("cargo:rerun-if-changed=icons/icon.png");
+        println!("cargo:rerun-if-changed=icons/icon.ico");
         tauri_build::build();
     }
     forward_build_env();

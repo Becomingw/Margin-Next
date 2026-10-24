@@ -38,11 +38,13 @@ import {
 	adoptMarginSnapshot,
 	readMarginManuscript as readVaultFile,
 } from "./api";
+import { useNativeFrame } from "./native-frame";
 import { marginWorkspace, openMarginWorkspace } from "./workspace";
 
 export function MarginApp() {
 	const { t } = useTranslation("margin");
 	const { resolvedTheme, setTheme } = useTheme();
+	const nativeFrame = useNativeFrame(resolvedTheme);
 	const root = useStore(marginWorkspace, (s) => s.root);
 	const [sidebar, setSidebar] = useState(true);
 	const [toolbar, setToolbar] = useState(false);
@@ -209,7 +211,14 @@ export function MarginApp() {
 		"inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40";
 	return (
 		<div className="flex h-dvh min-h-0 flex-col bg-background text-foreground">
-			<header className="flex h-12 shrink-0 items-center gap-2 border-hairline-soft border-b px-3">
+			<header
+				data-margin-frame
+				data-tauri-drag-region={nativeFrame || undefined}
+				className={cn(
+					"flex h-12 shrink-0 items-center gap-2 border-hairline-soft border-b bg-background px-3",
+					nativeFrame && "pr-36",
+				)}
+			>
 				<button
 					type="button"
 					className={iconButton}
@@ -220,13 +229,22 @@ export function MarginApp() {
 					<PanelLeft size={16} />
 				</button>
 				<img
+					data-tauri-drag-region={nativeFrame || undefined}
 					src={marginAppIcon}
 					alt=""
 					aria-hidden="true"
 					className="size-7 shrink-0"
 				/>
-				<span className="font-semibold text-sm">{t("name")}</span>
-				<span className="ml-3 min-w-0 flex-1 truncate text-muted-foreground text-xs">
+				<span
+					data-tauri-drag-region={nativeFrame || undefined}
+					className="font-semibold text-sm"
+				>
+					{t("name")}
+				</span>
+				<span
+					data-tauri-drag-region={nativeFrame || undefined}
+					className="ml-3 min-w-0 flex-1 truncate text-muted-foreground text-xs"
+				>
 					{tab?.title}
 				</span>
 				{tab && (
